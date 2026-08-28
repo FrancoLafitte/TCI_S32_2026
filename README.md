@@ -1,3 +1,10 @@
+## Integrantes
+| Legajo |       Nombre y apellido       |            Email            |
+|   ---  |              ---              |             ---             |
+| 31971  |   LAFITTE GUADARRAMA, FRANCO  |   francolafitte@gmail.com   |
+|  ...   |              ...              |            ...              |
+
+
 # 🌱 TCI_S32_2026
 
 > **Trabajo de Campo Integrador · Desarrollo de Software 2026 · Comisión S32 · UTN FR La Plata**
