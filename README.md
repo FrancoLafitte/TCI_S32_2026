@@ -2,7 +2,7 @@
 | Legajo |       Nombre y apellido       |            Email            |
 |   ---  |              ---              |             ---             |
 | 31971  |   LAFITTE GUADARRAMA, FRANCO  |   francolafitte@gmail.com   |
-|  ...   |              ...              |            ...              |
+| 33926  |   MECCICO, SANTIAGO CARLOS    |     santimecc@gmail.com     |
 
 
 # 🌱 TCI_S32_2026
