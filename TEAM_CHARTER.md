@@ -3,7 +3,7 @@
 ## 1. Integrantes del Equipo
 * Lafitte Guadarrama, Franco — francolafitte@gmail.com
 * Taini, Santino — santoti89@gmail.com
-* Farias, Ignacio — (Completar mail si lo necesitan)
+* Farias, Ignacio — nachofarias16@gmail.com
 * Meccico, Santiago — (Completar mail si lo necesitan)
 
 ## 2. Comunicación y Frecuencia
