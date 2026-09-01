@@ -1,11 +1,10 @@
 ## Integrantes
+| Legajo |       Nombre y apellido       |            Email            |
+|   ---  |              ---              |             ---             |
+| 31971  |   LAFITTE GUADARRAMA, FRANCO  |   francolafitte@gmail.com   |
+|  34575 |   TAINI, SANTINO              |   santoti89@gmail.com       |
+| 33650  |   FARIAS, IGNACIO             |   nachofarias16@gmail.com   |
 
-| Legajo | Nombre y apellido          | Email                   |
-| ------ | -------------------------- | ----------------------- |
-| 31971  | LAFITTE GUADARRAMA, FRANCO | francolafitte@gmail.com |
-| 34575  | TAINI, SANTINO             | santoti89@gmail.com     |
-| 33650  | FARIAS, IGNACIO            | nachofarias16@gmail.com |
-| 33926  | MECCICO, SANTIAGO CARLOS   | santimecc@gmail.com     |
 
 # 🌱 TCI_S32_2026
 
@@ -37,12 +36,12 @@ Todo el detalle paso a paso **te llega por mail**. Acá va la versión corta:
 
 ## 🗂️ Estructura del repo (qué va a haber acá)
 
-| Ruta            | Qué es                                                 |
-| --------------- | ------------------------------------------------------ |
-| `README.md`     | Esta portada                                           |
+| Ruta | Qué es |
+|---|---|
+| `README.md` | Esta portada |
 | `docs/dominio/` | El **dominio** del TCI (cuando la cátedra lo publique) |
-| `docs/spec/`    | La **spec** (requerimientos y criterios)               |
-| Actividades     | Consignas y material de cada etapa                     |
+| `docs/spec/` | La **spec** (requerimientos y criterios) |
+| Actividades | Consignas y material de cada etapa |
 
 > ⚠️ **Ojo:** esta estructura crece a medida que avanza el cuatrimestre. Mantené tu fork **al día** con:
 >
@@ -81,10 +80,10 @@ Trabajamos con **forks + `upstream`** (el flujo de colaboración real del open s
 
 ## 🧩 Alcance académico
 
-| Resultado de aprendizaje | Qué toca                                        |
-| ------------------------ | ----------------------------------------------- |
-| **RA03**                 | Uso de herramientas de desarrollo (Git, GitHub) |
-| **RA04**                 | Administración del seguimiento (PR, review)     |
-| **RA07**                 | Asistencia entre pares (revisión de código)     |
+| Resultado de aprendizaje | Qué toca |
+|---|---|
+| **RA03** | Uso de herramientas de desarrollo (Git, GitHub) |
+| **RA04** | Administración del seguimiento (PR, review) |
+| **RA07** | Asistencia entre pares (revisión de código) |
 
-_Comisión S32 · Desarrollo de Software 2026 · UTN FR La Plata · Aula invertida + TCI._
+*Comisión S32 · Desarrollo de Software 2026 · UTN FR La Plata · Aula invertida + TCI.*
