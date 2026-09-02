@@ -5,6 +5,7 @@
 * Taini, Santino — santoti89@gmail.com
 * Farias, Ignacio — nachofarias16@gmail.com
 * Meccico, Santiago — (Completar mail si lo necesitan)
+* Nepotti, Agustín José - ag.nepotti@gmail.com
 
 ## 2. Comunicación y Frecuencia
 * **Canal oficial de comunicación:** Grupo de WhatsApp del equipo.
