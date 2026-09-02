@@ -5,7 +5,7 @@
 |  34575 |   TAINI, SANTINO              |   santoti89@gmail.com       |
 | 33650  |   FARIAS, IGNACIO             |   nachofarias16@gmail.com   |
 | 33926  |   MECCICO, SANTIAGO CARLOS    |   santimecc@gmail.com       |
-
+| 34256  |   NEPOTTI, AGUSTÍN JOSÉ       |   ag.nepotti@gmail.com      | 
 
 # 🌱 TCI_S32_2026
 
