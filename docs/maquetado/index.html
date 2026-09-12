@@ -1,11 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-    
+
+	<header>
+		<h1> Informe de error </h1> 
+	</header>
+
+
+	<main>
+		<form>
+			<div>
+			<label for="maquina">Codigo de la maquina:.</label>
+			<input type="text" id="maquina" name="maquina">
+			</div>
+
+			<div>
+			<label for="descripcion">Descripción:</label>
+			<input type="text" id="descripcion" name="descripcion">
+			</div>
+			
+			<div>
+			<label for="imagen">Agregue imagen</label>
+                        <input type="file" id="imagen" name=>
+                        </div>
+
+			<div>
+			<label for="turno">Turno:</label>
+			<select id="turno" name="turno">
+    				<option value="manana">Mañana</option>
+    				<option value="tarde">Tarde</option>
+    				<option value="noche">Noche</option>
+			</select>			
+			</div>
+
+			<div>
+			<button type="submit">Enviar</button>
+			</div>
+		</form>
+	</main> 
+
+	<footer>
+		Lafitte-Taini-Farias-Meccico-Nepotti		
+	</footer>   
 </body>
 </html>
