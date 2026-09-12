@@ -1,2 +1,120 @@
-acá va el archivo css
+* {
+	box-sizing: border-box;
+}
 
+body {
+	margin: 0;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	font-family: Arial, sans-serif;
+	background-color: #f2f4f7;
+	color: #222;
+}
+
+/* Encabezado */
+
+header {
+	padding: 20px;
+	text-align: center;
+	background-color: #1f4e78;
+	color: white;
+}
+
+header h1 {
+	margin: 0;
+	font-size: 1.6rem;
+}
+
+
+main {
+	flex: 1;
+	width: 100%;
+	padding: 24px 16px;
+}
+
+/* Formulario */
+
+form {
+	width: 100%;
+	max-width: 480px;
+	margin: 0 auto;
+	padding: 24px;
+	background-color: white;
+	border-radius: 10px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+form div {
+	margin-bottom: 18px;
+}
+
+label {
+	display: block;
+	margin-bottom: 7px;
+	font-weight: bold;
+}
+
+input,
+textarea,
+select {
+	width: 100%;
+	padding: 12px;
+	border: 1px solid #aaa;
+	border-radius: 6px;
+	font: inherit;
+	background-color: white;
+}
+
+textarea {
+	min-height: 120px;
+	resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+	outline: 2px solid #1f4e78;
+	outline-offset: 1px;
+}
+
+/* Botón */
+
+button {
+	width: 100%;
+	padding: 12px 20px;
+	border: none;
+	border-radius: 6px;
+	background-color: #1f4e78;
+	color: white;
+	font: inherit;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: #163a59;
+}
+
+/* Pie de página */
+
+footer {
+	padding: 16px;
+	text-align: center;
+	font-size: 0.85rem;
+  overflow-wrap: anywhere;
+
+
+@media (min-width: 600px) {
+
+	button {
+	}
+}		margin-left: auto;
+		display: block;
+		width: auto;
+	}
+		font-size: 2rem;
+	header h1 {
+/* Pantallas mayores */
+}
+	background-color: #222;
