@@ -1,11 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Sistema de Gestión de Mantenimiento</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    
+    <header>
+        <div class="container">
+            <h1>Sistema de Gestión de Mantenimiento</h1>
+        </div>
+    </header>
+
+
+        <!-- Sección: Formulario para reportar incidencias de máquinas -->
+        <section id="reportes" class="reportes">
+            <div class="container">
+                <h2>Crear Reporte de Incidencia</h2>
+                <article>
+                    <!-- Formulario de reporte: captura información sobre la máquina dañada, problema y evidencia -->
+                    <form action="#" method="POST">
+                        <!-- Identificación de máquina mediante código QR -->
+                        <div class="form-group">
+                            <label for="maquina">Máquina (Código QR):</label>
+                            <input type="text" id="maquina" name="maquina" placeholder="Código QR de la máquina" required>
+                        </div>
+
+                        <!-- Descripción detallada del problema observado -->
+                        <div class="form-group">
+                            <label for="descripcion">Descripción del Problema:</label>
+                            <textarea id="descripcion" name="descripcion" placeholder="Describí el problema que observaste…" rows="5" required></textarea>
+                        </div>
+
+                        <!-- Evidencia fotográfica: acepta múltiples imágenes para documentar el daño -->
+                        <div class="form-group">
+                            <label for="fotos">Fotos:</label>
+                            <input type="file" id="fotos" name="fotos" accept="image/*" multiple>
+                        </div>
+
+                        <!-- Turno en el que ocurrió la incidencia -->
+                        <div class="form-group">
+                            <label for="turno">Turno:</label>
+                            <select id="turno" name="turno" required>
+                                <option value="">-- Selecciona un turno --</option>
+                                <option value="mañana">Mañana</option>
+                                <option value="tarde">Tarde</option>
+                                <option value="noche">Noche</option>
+                            </select>
+                        </div>
+
+                        <!-- Botón para enviar el reporte al sistema -->
+                        <button type="submit">Enviar Reporte</button>
+                    </form>
+                </article>
+            </div>
+        </section>
+
+        <section id="estado" class="estado">
+            <div class="container">
+                <h2>Estado de Máquinas</h2>
+                <article>
+                    <!-- Contenido aquí -->
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 TCI S32 - Sistema de Gestión de Mantenimiento. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 </body>
 </html>
