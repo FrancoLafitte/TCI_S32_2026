@@ -1,0 +1,464 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
+    color: #0f172a;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ===== HEADER ===== */
+header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    padding: 28px 0;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.2rem;
+    margin-bottom: 4px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    user-select: none;
+    cursor: default;
+}
+
+header .subtitle {
+    font-size: 0.95rem;
+    opacity: 0.85;
+    margin-bottom: 20px;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    color: #cbd5e1;
+}
+
+
+/* ===== MAIN ===== */
+main {
+    padding: 40px 0;
+}
+
+section {
+    margin-bottom: 60px;
+}
+
+section h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.1rem;
+    margin-bottom: 35px;
+    color: #0f172a;
+    font-weight: 700;
+    position: relative;
+    padding-bottom: 15px;
+    user-select: none;
+    cursor: default;
+}
+
+section h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+    border-radius: 2px;
+}
+
+/* ===== HERO SECTION ===== */
+.hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #10b981 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+    border-radius: 16px;
+    margin-bottom: 60px;
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: rgba(6, 182, 212, 0.2);
+    border-radius: 50%;
+    filter: blur(60px);
+}
+
+.hero h2 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 3rem;
+    border: none;
+    color: white;
+    margin-bottom: 20px;
+    font-weight: 800;
+    position: relative;
+    z-index: 1;
+    letter-spacing: -1px;
+    user-select: none;
+    cursor: default;
+}
+
+.hero p {
+    font-size: 1.15rem;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
+/* ===== FORM SECTION ===== */
+.reportes {
+    background: white;
+    padding: 50px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.reportes form {
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+}
+
+@media (min-width: 600px) {
+    .reportes form {
+        max-width: 550px;
+    }
+}
+
+@media (min-width: 900px) {
+    .reportes form {
+        max-width: 650px;
+    }
+}
+
+.form-group {
+    margin-bottom: 28px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.95rem;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: 0.3px;
+}
+
+input[type="text"],
+input[type="file"],
+textarea,
+select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #f8fafc;
+}
+
+input[type="text"]:focus,
+input[type="file"]:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: #10b981;
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1), 0 8px 24px rgba(16, 185, 129, 0.12);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 140px;
+    font-family: 'Inter', sans-serif;
+}
+
+input[type="file"] {
+    padding: 12px 16px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'%3E%3C/path%3E%3Cpolyline points='17 8 12 3 7 8'%3E%3C/polyline%3E%3Cline x1='12' y1='3' x2='12' y2='15'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 12px center;
+    padding-left: 45px;
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='3'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 45px;
+}
+
+/* ===== BUTTON ===== */
+button {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 16px 48px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+button:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(16, 185, 129, 0.35);
+}
+
+button:active {
+    transform: translateY(-1px);
+}
+
+/* ===== ESTADO SECTION ===== */
+.estado {
+    background: white;
+    padding: 50px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+/* ===== FOOTER ===== */
+footer {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    text-align: center;
+    padding: 45px 0;
+    margin-top: 80px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+footer p {
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    opacity: 0.85;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    header .subtitle {
+        font-size: 0.9rem;
+    }
+
+    header nav ul {
+        gap: 20px;
+        flex-direction: row;
+    }
+
+    header nav a {
+        font-size: 0.85rem;
+    }
+
+    section h2 {
+        font-size: 1.8rem;
+    }
+
+    section h2::after {
+        width: 50px;
+    }
+
+    .hero {
+        padding: 60px 0;
+    }
+
+    .hero h2 {
+        font-size: 2.2rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+    }
+
+    .reportes,
+    .estado {
+        padding: 35px 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    input[type="text"],
+    input[type="file"],
+    textarea,
+    select {
+        padding: 12px 14px;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 14px 40px;
+        font-size: 0.95rem;
+    }
+
+    footer nav ul {
+        gap: 20px;
+    }
+
+    footer nav a {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        padding: 20px 0;
+    }
+
+    header h1 {
+        font-size: 1.4rem;
+    }
+
+    header .subtitle {
+        font-size: 0.8rem;
+    }
+
+    header nav ul {
+        gap: 12px;
+        flex-direction: column;
+    }
+
+    main {
+        padding: 25px 0;
+    }
+
+    section {
+        margin-bottom: 40px;
+    }
+
+    section h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+
+    .hero {
+        padding: 50px 20px;
+        border-radius: 12px;
+        margin-bottom: 40px;
+    }
+
+    .hero h2 {
+        font-size: 1.8rem;
+    }
+
+    .hero p {
+        font-size: 0.95rem;
+    }
+
+    .reportes,
+    .estado {
+        padding: 30px 20px;
+        border-radius: 12px;
+    }
+
+    .reportes form {
+        max-width: 100%;
+    }
+
+    .form-group {
+        margin-bottom: 22px;
+    }
+
+    label {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    input[type="text"],
+    input[type="file"],
+    textarea,
+    select {
+        padding: 13px 14px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+    }
+
+    textarea {
+        min-height: 110px;
+    }
+
+    button {
+        padding: 14px 30px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+
+    footer {
+        padding: 30px 0;
+        margin-top: 60px;
+    }
+
+    footer p {
+        font-size: 0.85rem;
+        margin-bottom: 15px;
+    }
+}
