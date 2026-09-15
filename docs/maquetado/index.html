@@ -13,7 +13,7 @@
         </div>
     </header>
 
-
+    <main>
         <!-- Sección: Formulario para reportar incidencias de máquinas -->
         <section id="reportes" class="reportes">
             <div class="container">
@@ -53,6 +53,9 @@
                         <!-- Botón para enviar el reporte al sistema -->
                         <button type="submit">Enviar Reporte</button>
                     </form>
+
+                    <!-- Feedback al operario tras registrar la incidencia -->
+                    <div id="preview-incidencia" hidden></div>
                 </article>
             </div>
         </section>
@@ -60,9 +63,12 @@
         <section id="estado" class="estado">
             <div class="container">
                 <h2>Estado de Máquinas</h2>
-                <article>
-                    <!-- Contenido aquí -->
-                </article>
+
+                <!-- Se oculta al registrarse la primera incidencia -->
+                <p id="estado-vacio" class="estado-vacio">Todavía no hay incidencias registradas.</p>
+
+                <!-- Las tarjetas se insertan por JS, la más reciente primero -->
+                <div id="lista-incidencias" class="lista-incidencias"></div>
             </div>
         </section>
     </main>
@@ -72,5 +78,8 @@
             <p>&copy; 2026 TCI S32 - Sistema de Gestión de Mantenimiento. Todos los derechos reservados.</p>
         </div>
     </footer>
+
+    <script src="app.js" defer></script>
+
 </body>
 </html>

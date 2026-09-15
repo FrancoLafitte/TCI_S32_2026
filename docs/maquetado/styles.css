@@ -1,3 +1,4 @@
+@charset "UTF-8";
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 * {
@@ -143,22 +144,39 @@ section h2::after {
     border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-.reportes form {
+.reportes form,
+#preview-incidencia {
     max-width: 100%;
     width: 100%;
     margin: 0 auto;
 }
 
 @media (min-width: 600px) {
-    .reportes form {
+    .reportes form,
+    #preview-incidencia {
         max-width: 550px;
     }
 }
 
 @media (min-width: 900px) {
-    .reportes form {
+    .reportes form,
+    #preview-incidencia {
         max-width: 650px;
     }
+}
+
+/* Sin propiedad display: una regla de autor anularía el atributo hidden */
+#preview-incidencia {
+    margin-top: 28px;
+    padding: 20px 22px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-left: 4px solid #10b981;
+    border-radius: 10px;
+    color: #065f46;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    white-space: pre-line;
 }
 
 .form-group {
@@ -276,6 +294,124 @@ button:active {
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
     border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.estado-vacio {
+    text-align: center;
+    padding: 45px 20px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+.lista-incidencias {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 22px;
+}
+
+.tarjeta-incidencia {
+    position: relative;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 24px 22px 20px;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: aparecerTarjeta 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tarjeta-incidencia::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+}
+
+.tarjeta-incidencia:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+}
+
+.tarjeta-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.tarjeta-codigo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+}
+
+.tarjeta-turno {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.tarjeta-turno[data-turno="mañana"] {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.tarjeta-turno[data-turno="tarde"] {
+    background: #cffafe;
+    color: #155e75;
+}
+
+.tarjeta-turno[data-turno="noche"] {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.tarjeta-descripcion {
+    color: #334155;
+    font-size: 0.93rem;
+    line-height: 1.65;
+    margin-bottom: 16px;
+    overflow-wrap: break-word;
+}
+
+.tarjeta-pie {
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
+}
+
+@keyframes aparecerTarjeta {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tarjeta-incidencia {
+        animation: none;
+        transition: none;
+    }
 }
 
 /* ===== FOOTER ===== */
