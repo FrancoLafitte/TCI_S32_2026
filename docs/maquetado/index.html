@@ -20,11 +20,11 @@
                 <h2>Crear Reporte de Incidencia</h2>
                 <article>
                     <!-- Formulario de reporte: captura información sobre la máquina dañada, problema y evidencia -->
-                    <form action="#" method="POST">
+                    <form id="form-incidencia" action="#" method="POST"> <!-- Renombre id-->
                         <!-- Identificación de máquina mediante código QR -->
                         <div class="form-group">
-                            <label for="maquina">Máquina (Código QR):</label>
-                            <input type="text" id="maquina" name="maquina" placeholder="Código QR de la máquina" required>
+                            <label for="codigo-maquina">Máquina (Código QR):</label>
+                            <input type="text" id="codigo-maquina" name="codigo-maquina" placeholder="Código QR de la máquina" required> <!-- Renombre id-->
                         </div>
 
                         <!-- Descripción detallada del problema observado -->
@@ -35,8 +35,8 @@
 
                         <!-- Evidencia fotográfica: acepta múltiples imágenes para documentar el daño -->
                         <div class="form-group">
-                            <label for="fotos">Fotos:</label>
-                            <input type="file" id="fotos" name="fotos" accept="image/*" multiple>
+                            <label for="foto">Fotos:</label>
+                            <input type="file" id="foto" name="foto" accept="image/*" multiple> <!-- Renombre id-->
                         </div>
 
                         <!-- Turno en el que ocurrió la incidencia -->
@@ -51,7 +51,7 @@
                         </div>
 
                         <!-- Botón para enviar el reporte al sistema -->
-                        <button type="submit">Enviar Reporte</button>
+                        <button type="submit" id="btn-enviar" disabled>Enviar Reporte</button> <!-- Renombre id-->
                     </form>
 
                     <!-- Feedback al operario tras registrar la incidencia -->

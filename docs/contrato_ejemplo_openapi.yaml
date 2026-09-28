@@ -1,0 +1,68 @@
+openapi: 3.1.0
+info:
+  title: API de Gestión de Mantenimiento y Stock
+  version: 0.0.1
+  description: Borrador v0 con los endpoints de incidencia y stock de la planta.
+servers:
+  - url: http://localhost:4010
+    description: Mock server local
+paths:
+  /incidencias:
+    get:
+      summary: Obtiene la lista de incidencias
+      responses:
+        '200':
+          description: Lista de incidencias obtenida con éxito
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Incidencia'
+              example:
+                - id: 1
+                  maquina: "CAL-001"
+                  descripcion: "Ruido extraño en el motor"
+                  turno: "mañana"
+                - id: 2
+                  maquina: "FRA-002"
+                  descripcion: "Falla en la banda"
+                  turno: "tarde"
+  /repuestos:
+    get:
+      summary: Obtiene la lista de repuestos en stock
+      responses:
+        '200':
+          description: Stock actual
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Repuesto'
+              example:
+                - codigo: "REP-01"
+                  nombre: "Filtro de aceite"
+                  cantidad: 15
+components:
+  schemas:
+    Incidencia:
+      type: object
+      properties:
+        id:
+          type: integer
+        maquina:
+          type: string
+        descripcion:
+          type: string
+        turno:
+          type: string
+    Repuesto:
+      type: object
+      properties:
+        codigo:
+          type: string
+        nombre:
+          type: string
+        cantidad:
+          type: integer

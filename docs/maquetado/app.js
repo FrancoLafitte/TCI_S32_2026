@@ -1,115 +1,56 @@
-console.log("app.js cargado ✅");
+// REQ-IP-02: Señal de vida
+console.log("app.js cargado ");
 
+// REQ-IP-03: Seleccionar el formulario
+const form = document.querySelector("#form-incidencia");
 
+// P3: objeto para UNA incidencia (array recién el 18/09 con la lista)
 function leerFormulario() {
-    const codigoMaquina = document.getElementById('maquina').value.trim();
-    const descripcion = document.getElementById('descripcion').value.trim();
-    const fotos = document.getElementById('fotos').files;
-    const turno = document.getElementById('turno').value;
-
     const incidencia = {
-        codigoMaquina,
-        descripcion,
-        fotos: Array.from(fotos),
-        turno,
-        timestamp: new Date().toISOString()
+        codigoMaquina: document.querySelector("#codigo-maquina").value,
+        descripcion: document.querySelector("#descripcion").value,
+        turno: document.querySelector("#turno").value
     };
-
+    console.table(incidencia);
     return incidencia;
 }
 
-function validarFormulario() {
-    const datos = leerFormulario();
-
-    if (!datos.codigoMaquina) {
-        console.error('Error: El código de máquina es requerido');
-        return false;
-    }
-
-    if (!datos.descripcion) {
-        console.error('Error: La descripción del problema es requerida');
-        return false;
-    }
-
-    if (!datos.turno) {
-        console.error('Error: Debe seleccionar un turno');
-        return false;
-    }
-
-    console.log('Formulario válido:', datos);
-    return true;
-}
-
+// P3: objeto para traducir valores
 const NOMBRES_TURNO = { mañana: "Mañana", tarde: "Tarde", noche: "Noche" };
 
+// REQ-IP-08: Renderizar el feedback usando textContent (cero innerHTML)
 function renderizarPreview(incidencia) {
-    const preview = document.querySelector('#preview-incidencia');
+    const preview = document.querySelector("#preview-incidencia");
     const turnoLegible = NOMBRES_TURNO[incidencia.turno] ?? incidencia.turno;
 
-    // textContent y no innerHTML: lo que escribe el operario es texto, no estructura (XSS).
-    preview.textContent =
-        `Incidencia registrada: ${incidencia.codigoMaquina} · Turno ${turnoLegible}\n` +
-        incidencia.descripcion;
+    preview.textContent = `Incidencia registrada: ${incidencia.codigoMaquina} · Turno ${turnoLegible}\n${incidencia.descripcion}`;
 }
 
-function crearTarjetaIncidencia(incidencia) {
-    const turnoLegible = NOMBRES_TURNO[incidencia.turno] ?? incidencia.turno;
-    const cantidadFotos = incidencia.fotos?.length ?? 0;
+// P5: addEventListener separa el comportamiento de la estructura
+form.addEventListener("submit", (event) => {
+    event.preventDefault(); // REQ-IP-05: Evitar recarga de página
 
-    const codigo = document.createElement('h3');
-    codigo.className = 'tarjeta-codigo';
-    codigo.textContent = incidencia.codigoMaquina;
+    const incidencia = leerFormulario();
 
-    const turno = document.createElement('span');
-    turno.className = 'tarjeta-turno';
-    turno.dataset.turno = incidencia.turno;
-    turno.textContent = turnoLegible;
+    // REQ-IP-09: Mostrar feedback
+    renderizarPreview(incidencia);
+    const preview = document.querySelector("#preview-incidencia");
+    preview.hidden = false;
 
-    const encabezado = document.createElement('header');
-    encabezado.className = 'tarjeta-encabezado';
-    encabezado.append(codigo, turno);
-
-    const descripcion = document.createElement('p');
-    descripcion.className = 'tarjeta-descripcion';
-    descripcion.textContent = incidencia.descripcion;
-
-    const hora = new Date(incidencia.timestamp).toLocaleString('es-AR', {
-        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-    });
-
-    const pie = document.createElement('footer');
-    pie.className = 'tarjeta-pie';
-    pie.textContent = cantidadFotos === 0
-        ? hora
-        : `${hora} · ${cantidadFotos === 1 ? '1 foto' : `${cantidadFotos} fotos`}`;
-
-    const tarjeta = document.createElement('article');
-    tarjeta.className = 'tarjeta-incidencia';
-    tarjeta.append(encabezado, descripcion, pie);
-
-    return tarjeta;
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('form');
-    const preview = document.querySelector('#preview-incidencia');
-    const lista = document.querySelector('#lista-incidencias');
-    const estadoVacio = document.querySelector('#estado-vacio');
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        if (!validarFormulario()) return;
-
-        const incidencia = leerFormulario();
-
-        renderizarPreview(incidencia);
-        preview.hidden = false;
-
-        lista.prepend(crearTarjetaIncidencia(incidencia));
-        estadoVacio.hidden = true;
-
-        form.reset();
-        document.getElementById('maquina').focus();
-    });
+    // REQ-IP-15: Limpiar formulario
+    form.reset();
+    
+    // Forzar la actualización del botón para que vuelva a bloquearse tras enviar
+    actualizarBoton();
 });
+
+// REQ-IP-16B: Botón que se habilita (Grupo D)
+const codigoInput = document.querySelector("#codigo-maquina");
+const btnEnviar = document.querySelector("#btn-enviar");
+
+function actualizarBoton() {
+    btnEnviar.disabled = codigoInput.value.trim() === "";
+}
+
+codigoInput.addEventListener("input", actualizarBoton);
+actualizarBoton(); // estado inicial
