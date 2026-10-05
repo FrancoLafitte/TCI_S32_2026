@@ -1,0 +1,98 @@
+openapi: 3.1.0
+info:
+  title: API de Repuestos e Incidencias
+  version: 0.1.0
+  description: Contrato v0 (borrador) del TCI S32.
+servers:
+  - url: http://127.0.0.1:4010
+
+paths:
+  /repuestos:
+    get:
+      summary: Listar repuestos
+      responses:
+        "200":
+          description: Lista de repuestos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Repuesto"
+              example:
+                - id: 1
+                  codigo: "REP-0001"
+                  descripcion: "Rodamiento 6204"
+                  stockFisico: 12
+                  stockApartado: 2
+                  umbralMinimo: 5
+
+  /repuestos/{id}/consumos:
+    post:
+      summary: Descontar stock por escaneo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsumoNuevo"
+            example:
+              cantidad: 1
+              incidenciaId: 10
+      responses:
+        "201":
+          description: Consumo registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Repuesto"
+              example:
+                id: 1
+                codigo: "REP-0001"
+                descripcion: "Rodamiento 6204"
+                stockFisico: 11
+                stockApartado: 2
+                umbralMinimo: 5
+        "404":
+          description: El repuesto no existe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Stock insuficiente o apartado por una reserva
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Repuesto:
+      type: object
+      required: [id, codigo, descripcion, stockFisico, stockApartado, umbralMinimo]
+      properties:
+        id: { type: integer }
+        codigo: { type: string }
+        descripcion: { type: string }
+        stockFisico: { type: integer, minimum: 0 }
+        stockApartado: { type: integer, minimum: 0 }
+        umbralMinimo: { type: integer, minimum: 0 }
+    ConsumoNuevo:
+      type: object
+      required: [cantidad, incidenciaId]
+      properties:
+        cantidad: { type: integer, minimum: 1 }
+        incidenciaId: { type: integer }
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje: { type: string }
