@@ -1,15 +1,61 @@
 openapi: 3.1.0
+
 info:
-  title: API de Repuestos e Incidencias
+  title: API de Gestión de Stock y Mantenimiento de Planta
   version: 0.1.0
-  description: Contrato v0 (borrador) del TCI S32.
+  description: |
+    Contrato v0 (borrador) del TCI S32 - Desarrollo de Software 2026.
+
+    Fuente de verdad del dominio: docs/dominio. Las reglas se citan como RN-01 a RN-10.
+
+    Decisiones que reflejan el dominio:
+    - La lista de compras es una VISTA DERIVADA (solo GET), no una entidad.
+    - Los movimientos de stock son INMUTABLES (solo GET).
+    - stockDisponible = stockFisico - stockReservado. El umbral se evalúa sobre el disponible (RN-02).
+    - El turno de una incidencia se deriva del timestamp, no lo envía el cliente.
+    - RN-09 (notificación por correo) es un efecto de los endpoints, no tiene endpoint propio.
+
+    PENDIENTE DE VALIDAR CON LA CATEDRA: los enums de `estado` son provisorios
+    (los estados se pedían como máquinas de estado en la M1, que se salteó).
+
+    Para usar el mock con Prism hay que enviar un header Authorization con cualquier
+    valor, por ejemplo: `Authorization: Bearer test`. Sin header Prism responde 401.
+
 servers:
   - url: http://127.0.0.1:4010
+    description: Mock server (Prism)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Repuestos
+  - name: Maquinas
+  - name: Incidencias
+  - name: Reparaciones
+  - name: Compras
+  - name: Reservas
 
 paths:
   /repuestos:
     get:
-      summary: Listar repuestos
+      tags: [Repuestos]
+      summary: Consultar repuestos
+      description: |
+        Búsqueda por nombre, descripción, máquina o código. Roles: todos.
+      parameters:
+        - name: q
+          in: query
+          description: Texto libre (nombre, descripción o código).
+          schema: { type: string }
+        - name: maquinaCodigo
+          in: query
+          description: Filtra repuestos aplicables a esa máquina.
+          schema: { type: string }
+        - name: bajoUmbral
+          in: query
+          description: Si es true, solo repuestos con stockDisponible <= umbralMinimo (RN-02).
+          schema: { type: boolean }
       responses:
         "200":
           description: Lista de repuestos
@@ -17,82 +63,1014 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: "#/components/schemas/Repuesto"
+                items: { $ref: "#/components/schemas/Repuesto" }
               example:
                 - id: 1
                   codigo: "REP-0001"
-                  descripcion: "Rodamiento 6204"
+                  nombre: "Rodamiento 6204"
+                  descripcion: "Rodamiento rígido de bolas para banda de transporte"
                   stockFisico: 12
-                  stockApartado: 2
+                  stockReservado: 2
+                  stockDisponible: 10
                   umbralMinimo: 5
-
-  /repuestos/{id}/consumos:
+                  ubicacion: { codigo: "A-03-12", descripcion: "Estantería A, nivel 3" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
     post:
-      summary: Descontar stock por escaneo
+      tags: [Repuestos]
+      summary: Dar de alta un repuesto
+      description: "Roles: Encargado."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepuestoNuevo" }
+            example:
+              codigo: "REP-0002"
+              nombre: "Correa dentada T10"
+              descripcion: "Correa para fraccionador"
+              umbralMinimo: 3
+              ubicacion: { codigo: "B-01-04" }
+      responses:
+        "201":
+          description: Repuesto creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Repuesto" }
+              example:
+                id: 2
+                codigo: "REP-0002"
+                nombre: "Correa dentada T10"
+                descripcion: "Correa para fraccionador"
+                stockFisico: 0
+                stockReservado: 0
+                stockDisponible: 0
+                umbralMinimo: 3
+                ubicacion: { codigo: "B-01-04" }
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+        "409":
+          description: Ya existe un repuesto con ese código.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { codigo: "CODIGO_DUPLICADO", mensaje: "Ya existe un repuesto con el código REP-0002" }
+
+  /repuestos/{codigo}:
+    get:
+      tags: [Repuestos]
+      summary: Obtener un repuesto por código (escaneo QR o de barras)
+      description: "Devuelve la información completa del repuesto. Roles: todos."
       parameters:
-        - name: id
+        - $ref: "#/components/parameters/CodigoRepuesto"
+      responses:
+        "200":
+          description: Repuesto
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Repuesto" }
+              example:
+                id: 1
+                codigo: "REP-0001"
+                nombre: "Rodamiento 6204"
+                descripcion: "Rodamiento rígido de bolas para banda de transporte"
+                stockFisico: 12
+                stockReservado: 2
+                stockDisponible: 10
+                umbralMinimo: 5
+                ubicacion: { codigo: "A-03-12", descripcion: "Estantería A, nivel 3" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /repuestos/{codigo}/movimientos:
+    get:
+      tags: [Repuestos]
+      summary: Historial del repuesto (trazabilidad)
+      description: |
+        RN-06. Cronología interna: pedido de compra, recepción, uso.
+        Los movimientos son inmutables: no hay POST, PUT ni DELETE. Roles: todos.
+      parameters:
+        - $ref: "#/components/parameters/CodigoRepuesto"
+      responses:
+        "200":
+          description: Movimientos en orden cronológico
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MovimientoStock" }
+              example:
+                - id: 101
+                  tipo: entrada
+                  cantidad: 10
+                  fecha: "2026-09-01T10:15:00Z"
+                  usuario: "encargado1"
+                  referencia: { tipo: pedido_compra, id: 7 }
+                - id: 102
+                  tipo: consumo
+                  cantidad: 1
+                  fecha: "2026-09-10T08:30:00Z"
+                  usuario: "mantenimiento3"
+                  referencia: { tipo: reparacion, id: 21 }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /repuestos/reconocimiento:
+    post:
+      tags: [Repuestos]
+      summary: Reconocer un repuesto a partir de una foto
+      description: "Devuelve candidatos ordenados por confianza. Roles: Operario, Mantenimiento, Encargado."
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [foto]
+              properties:
+                foto: { type: string, format: binary }
+      responses:
+        "200":
+          description: Candidatos reconocidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CandidatoReconocimiento" }
+              example:
+                - confianza: 0.93
+                  repuesto:
+                    id: 1
+                    codigo: "REP-0001"
+                    nombre: "Rodamiento 6204"
+                    descripcion: "Rodamiento rígido de bolas para banda de transporte"
+                    stockFisico: 12
+                    stockReservado: 2
+                    stockDisponible: 10
+                    umbralMinimo: 5
+                    ubicacion: { codigo: "A-03-12" }
+                  maquinasCompatibles: ["BT-001", "FR-002"]
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+
+  /maquinas:
+    post:
+      tags: [Maquinas]
+      summary: Registrar una máquina nueva
+      description: "RN-07. Registra la máquina y su lista de repuestos a mantener en stock. Roles: Encargado."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MaquinaNueva" }
+            example:
+              codigo: "CA-003"
+              tipo: "Caldera"
+              ejemplar: "3"
+              repuestosAMantener: ["REP-0001", "REP-0002"]
+      responses:
+        "201":
+          description: Máquina registrada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Maquina" }
+              example:
+                codigo: "CA-003"
+                tipo: "Caldera"
+                ejemplar: "3"
+                estado: operativa
+                repuestosAMantener: ["REP-0001", "REP-0002"]
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+        "409":
+          description: Ya existe una máquina con ese código.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { codigo: "CODIGO_DUPLICADO", mensaje: "Ya existe una máquina con el código CA-003" }
+
+  /maquinas/{codigo}:
+    get:
+      tags: [Maquinas]
+      summary: Obtener una máquina por código (escaneo QR o de barras)
+      description: "Roles: todos."
+      parameters:
+        - name: codigo
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: string }
+          example: "CA-003"
+      responses:
+        "200":
+          description: Máquina
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Maquina" }
+              example:
+                codigo: "CA-003"
+                tipo: "Caldera"
+                ejemplar: "3"
+                estado: operativa
+                repuestosAMantener: ["REP-0001", "REP-0002"]
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /incidencias:
+    get:
+      tags: [Incidencias]
+      summary: Listar incidencias (tablero y triage)
+      description: "Roles: Mantenimiento, Encargado, Gerencia."
+      parameters:
+        - name: estado
+          in: query
+          schema: { $ref: "#/components/schemas/EstadoIncidencia" }
+        - name: maquinaCodigo
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Lista de incidencias
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Incidencia" }
+              example:
+                - id: 10
+                  maquinaCodigo: "CA-003"
+                  descripcion: "Pierde presión de vapor"
+                  fotos: ["https://ejemplo.local/fotos/10-1.jpg"]
+                  estado: abierta
+                  turno: manana
+                  creadaEn: "2026-10-05T07:45:00Z"
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+    post:
+      tags: [Incidencias]
+      summary: Reportar una incidencia
+      description: |
+        Identifica la máquina por su código y adjunta fotos. El turno se deriva del
+        timestamp del servidor. Notifica por correo (RN-09). Roles: Operario, Mantenimiento.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [maquinaCodigo, descripcion]
+              properties:
+                maquinaCodigo: { type: string }
+                descripcion: { type: string }
+                fotos:
+                  type: array
+                  items: { type: string, format: binary }
+      responses:
+        "201":
+          description: Incidencia creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Incidencia" }
+              example:
+                id: 10
+                maquinaCodigo: "CA-003"
+                descripcion: "Pierde presión de vapor"
+                fotos: ["https://ejemplo.local/fotos/10-1.jpg"]
+                estado: abierta
+                turno: manana
+                creadaEn: "2026-10-05T07:45:00Z"
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /incidencias/{id}:
+    get:
+      tags: [Incidencias]
+      summary: Obtener una incidencia
+      description: "Roles: Mantenimiento, Encargado, Gerencia."
+      parameters:
+        - $ref: "#/components/parameters/IdEntero"
+      responses:
+        "200":
+          description: Incidencia
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Incidencia" }
+              example:
+                id: 10
+                maquinaCodigo: "CA-003"
+                descripcion: "Pierde presión de vapor"
+                fotos: ["https://ejemplo.local/fotos/10-1.jpg"]
+                estado: abierta
+                turno: manana
+                creadaEn: "2026-10-05T07:45:00Z"
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /reparaciones:
+    post:
+      tags: [Reparaciones]
+      summary: Iniciar una reparación sobre una incidencia
+      description: "Roles: Mantenimiento."
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ConsumoNuevo"
-            example:
-              cantidad: 1
-              incidenciaId: 10
+              type: object
+              required: [incidenciaId]
+              properties:
+                incidenciaId: { type: integer }
+            example: { incidenciaId: 10 }
       responses:
         "201":
-          description: Consumo registrado
+          description: Reparación creada
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Repuesto"
+              schema: { $ref: "#/components/schemas/Reparacion" }
               example:
-                id: 1
-                codigo: "REP-0001"
-                descripcion: "Rodamiento 6204"
-                stockFisico: 11
-                stockApartado: 2
-                umbralMinimo: 5
-        "404":
-          description: El repuesto no existe
+                id: 21
+                incidenciaId: 10
+                lineasUso: []
+                iniciadaEn: "2026-10-05T08:10:00Z"
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /reparaciones/{id}/lineas-uso:
+    post:
+      tags: [Reparaciones]
+      summary: Registrar el uso de un repuesto (descuento por escaneo)
+      description: |
+        RN-01: descuenta `cantidad` del stock físico. Si el stock físico resultante sería
+        menor que 0, se rechaza con 409 STOCK_INSUFICIENTE.
+        RN-05: si las unidades están reservadas para otra cosa, se rechaza con 409
+        REPUESTO_RESERVADO.
+        RN-02: si tras el descuento stockDisponible <= umbralMinimo, se genera una alerta.
+        Notifica por correo (RN-09). Roles: Mantenimiento.
+      parameters:
+        - $ref: "#/components/parameters/IdEntero"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LineaUsoNueva" }
+            example: { repuestoCodigo: "REP-0001", cantidad: 1 }
+      responses:
+        "201":
+          description: Línea de uso registrada y stock actualizado
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
+              schema: { $ref: "#/components/schemas/ResultadoLineaUso" }
+              example:
+                lineaUso: { id: 55, reparacionId: 21, repuestoCodigo: "REP-0001", cantidad: 1 }
+                repuesto:
+                  id: 1
+                  codigo: "REP-0001"
+                  nombre: "Rodamiento 6204"
+                  stockFisico: 11
+                  stockReservado: 2
+                  stockDisponible: 9
+                  umbralMinimo: 5
+                  ubicacion: { codigo: "A-03-12" }
+                alertaGenerada: false
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
         "409":
-          description: Stock insuficiente o apartado por una reserva
+          description: Stock insuficiente (RN-01) o repuesto reservado (RN-05).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                stockInsuficiente:
+                  summary: RN-01
+                  value: { codigo: "STOCK_INSUFICIENTE", mensaje: "El stock físico no alcanza para la cantidad pedida" }
+                repuestoReservado:
+                  summary: RN-05
+                  value: { codigo: "REPUESTO_RESERVADO", mensaje: "Las unidades disponibles están reservadas para un mantenimiento preventivo" }
+
+  /lista-compras:
+    get:
+      tags: [Compras]
+      summary: Ver la lista de compras (vista derivada)
+      description: |
+        No es una entidad persistida. Combina repuestos bajo umbral (RN-02) con los
+        requerimientos manuales cargados por el encargado. Roles: Encargado, Gerencia.
+      responses:
+        "200":
+          description: Ítems de la lista de compras
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: array
+                items: { $ref: "#/components/schemas/ItemListaCompras" }
+              example:
+                - origen: umbral
+                  repuestoCodigo: "REP-0001"
+                  nombre: "Rodamiento 6204"
+                  stockDisponible: 5
+                  umbralMinimo: 5
+                - origen: manual
+                  repuestoCodigo: "REP-0002"
+                  nombre: "Correa dentada T10"
+                  cantidadSugerida: 4
+                  motivo: "Previsión para parada de octubre"
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+
+  /lista-compras/requerimientos:
+    post:
+      tags: [Compras]
+      summary: Agregar un requerimiento manual a la lista de compras
+      description: "Previsión de necesidades o pedido puntual. Roles: Encargado."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RequerimientoManualNuevo" }
+            example: { repuestoCodigo: "REP-0002", cantidadSugerida: 4, motivo: "Previsión para parada de octubre" }
+      responses:
+        "201":
+          description: Requerimiento agregado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ItemListaCompras" }
+              example:
+                origen: manual
+                repuestoCodigo: "REP-0002"
+                nombre: "Correa dentada T10"
+                cantidadSugerida: 4
+                motivo: "Previsión para parada de octubre"
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /alertas:
+    get:
+      tags: [Compras]
+      summary: Listar alertas de umbral
+      description: "RN-02. Alertas generadas cuando stockDisponible <= umbralMinimo. Roles: Encargado, Gerencia."
+      responses:
+        "200":
+          description: Alertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Alerta" }
+              example:
+                - id: 3
+                  repuestoCodigo: "REP-0001"
+                  stockDisponible: 5
+                  umbralMinimo: 5
+                  generadaEn: "2026-10-05T08:12:00Z"
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+
+  /pedidos-compra:
+    get:
+      tags: [Compras]
+      summary: Listar pedidos de compra
+      description: "Roles: Mantenimiento, Encargado, Gerencia."
+      parameters:
+        - name: estado
+          in: query
+          schema: { $ref: "#/components/schemas/EstadoPedido" }
+      responses:
+        "200":
+          description: Pedidos de compra
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PedidoCompra" }
+              example:
+                - id: 7
+                  lineas: [{ repuestoCodigo: "REP-0001", cantidad: 10 }]
+                  urgencia: urgente
+                  estado: pendiente
+                  creadoEn: "2026-10-05T08:20:00Z"
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+    post:
+      tags: [Compras]
+      summary: Generar un pedido de compra
+      description: |
+        RN-03 y RN-04. Se envía con grado de urgencia a los encargados de todos los turnos
+        y a la gerencia. Notifica por correo (RN-09). Roles: Mantenimiento, Encargado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PedidoCompraNuevo" }
+            example:
+              urgencia: urgente
+              lineas: [{ repuestoCodigo: "REP-0001", cantidad: 10 }]
+      responses:
+        "201":
+          description: Pedido creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PedidoCompra" }
+              example:
+                id: 7
+                lineas: [{ repuestoCodigo: "REP-0001", cantidad: 10 }]
+                urgencia: urgente
+                estado: pendiente
+                creadoEn: "2026-10-05T08:20:00Z"
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /pedidos-compra/{id}/recepcion:
+    post:
+      tags: [Compras]
+      summary: Registrar la recepción de una compra
+      description: |
+        RN-08. Carga el stock físico y su ubicación. La tarea puede delegarse en otro
+        usuario y supervisarse. Genera movimientos de tipo `entrada`. Roles: Encargado.
+      parameters:
+        - $ref: "#/components/parameters/IdEntero"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecepcionNueva" }
+            example:
+              delegadoA: "mantenimiento3"
+              lineas:
+                - { repuestoCodigo: "REP-0001", cantidad: 10, ubicacion: { codigo: "A-03-12" } }
+      responses:
+        "201":
+          description: Recepción registrada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PedidoCompra" }
+              example:
+                id: 7
+                lineas: [{ repuestoCodigo: "REP-0001", cantidad: 10 }]
+                urgencia: urgente
+                estado: recibido
+                creadoEn: "2026-10-05T08:20:00Z"
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403": { $ref: "#/components/responses/SinPermiso" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "409":
+          description: El pedido ya fue recibido o fue cancelado.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { codigo: "ESTADO_INVALIDO", mensaje: "El pedido ya fue recibido" }
+
+  /reservas:
+    get:
+      tags: [Reservas]
+      summary: Listar reservas
+      description: "Roles: Mantenimiento, Encargado, Gerencia."
+      parameters:
+        - name: estado
+          in: query
+          schema: { $ref: "#/components/schemas/EstadoReserva" }
+      responses:
+        "200":
+          description: Reservas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Reserva" }
+              example:
+                - id: 4
+                  lineas: [{ repuestoCodigo: "REP-0001", cantidad: 2 }]
+                  motivo: "Preventivo caldera CA-003"
+                  estado: activa
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+    post:
+      tags: [Reservas]
+      summary: Reservar repuestos para un mantenimiento preventivo
+      description: |
+        Aparta stock físico: aumenta stockReservado y reduce stockDisponible. Genera
+        movimientos de tipo `reserva`. Roles: Encargado, Mantenimiento.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReservaNueva" }
+            example:
+              motivo: "Preventivo caldera CA-003"
+              lineas: [{ repuestoCodigo: "REP-0001", cantidad: 2 }]
+      responses:
+        "201":
+          description: Reserva creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reserva" }
+              example:
+                id: 4
+                lineas: [{ repuestoCodigo: "REP-0001", cantidad: 2 }]
+                motivo: "Preventivo caldera CA-003"
+                estado: activa
+        "400": { $ref: "#/components/responses/SolicitudInvalida" }
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "409":
+          description: No hay stock disponible suficiente para reservar.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { codigo: "STOCK_INSUFICIENTE", mensaje: "El stock disponible no alcanza para la reserva" }
+
+  /reservas/{id}/liberacion:
+    post:
+      tags: [Reservas]
+      summary: Liberar una reserva (con autorización)
+      description: |
+        RN-05. Exige autorización de un usuario con rol Encargado y avisa de inmediato el
+        cambio y su impacto sobre lo planificado. Roles: Encargado.
+      parameters:
+        - $ref: "#/components/parameters/IdEntero"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties:
+                motivo: { type: string }
+            example: { motivo: "Se necesita la pieza para una incidencia urgente" }
+      responses:
+        "200":
+          description: Reserva liberada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reserva" }
+              example:
+                id: 4
+                lineas: [{ repuestoCodigo: "REP-0001", cantidad: 2 }]
+                motivo: "Preventivo caldera CA-003"
+                estado: liberada
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "403":
+          description: Solo un Encargado puede autorizar la liberación (RN-05).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { codigo: "SIN_PERMISO", mensaje: "La liberación exige el rol Encargado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "409":
+          description: La reserva no está activa.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { codigo: "ESTADO_INVALIDO", mensaje: "La reserva ya fue liberada o ejecutada" }
+
+  /reservas/{id}/ejecucion:
+    post:
+      tags: [Reservas]
+      summary: Ejecutar el mantenimiento preventivo reservado
+      description: |
+        RN-10. Descuenta el stock físico y libera la reserva en la MISMA transacción.
+        Genera movimientos de tipo `consumo`. Roles: Mantenimiento, Encargado.
+      parameters:
+        - $ref: "#/components/parameters/IdEntero"
+      responses:
+        "200":
+          description: Preventivo ejecutado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reserva" }
+              example:
+                id: 4
+                lineas: [{ repuestoCodigo: "REP-0001", cantidad: 2 }]
+                motivo: "Preventivo caldera CA-003"
+                estado: ejecutada
+        "401": { $ref: "#/components/responses/NoAutenticado" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "409":
+          description: La reserva no está activa o el stock físico no alcanza.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { codigo: "ESTADO_INVALIDO", mensaje: "La reserva no está activa" }
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Autenticación por token. El rol (operario, mantenimiento, encargado, gerencia)
+        viaja en el token y se valida en cada endpoint (autorización por rol).
+
+  parameters:
+    CodigoRepuesto:
+      name: codigo
+      in: path
+      required: true
+      description: Código QR o de barras del repuesto.
+      schema: { type: string }
+      example: "REP-0001"
+    IdEntero:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+      example: 1
+
+  responses:
+    SolicitudInvalida:
+      description: Solicitud inválida (datos faltantes o con formato incorrecto).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { codigo: "SOLICITUD_INVALIDA", mensaje: "El campo cantidad debe ser un entero mayor o igual a 1" }
+    NoAutenticado:
+      description: Falta el token o es inválido.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { codigo: "NO_AUTENTICADO", mensaje: "Token ausente o inválido" }
+    SinPermiso:
+      description: El rol del usuario no permite esta operación.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { codigo: "SIN_PERMISO", mensaje: "Tu rol no permite esta operación" }
+    NoEncontrado:
+      description: El recurso no existe.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { codigo: "NO_ENCONTRADO", mensaje: "No se encontró el recurso pedido" }
+
   schemas:
-    Repuesto:
-      type: object
-      required: [id, codigo, descripcion, stockFisico, stockApartado, umbralMinimo]
-      properties:
-        id: { type: integer }
-        codigo: { type: string }
-        descripcion: { type: string }
-        stockFisico: { type: integer, minimum: 0 }
-        stockApartado: { type: integer, minimum: 0 }
-        umbralMinimo: { type: integer, minimum: 0 }
-    ConsumoNuevo:
-      type: object
-      required: [cantidad, incidenciaId]
-      properties:
-        cantidad: { type: integer, minimum: 1 }
-        incidenciaId: { type: integer }
     Error:
       type: object
       required: [codigo, mensaje]
       properties:
         codigo: { type: string }
         mensaje: { type: string }
+
+    Ubicacion:
+      type: object
+      required: [codigo]
+      properties:
+        codigo: { type: string, description: "Código alfanumérico, por ejemplo A-03-12." }
+        descripcion: { type: string }
+
+    Repuesto:
+      type: object
+      required: [id, codigo, nombre, stockFisico, stockReservado, stockDisponible, umbralMinimo, ubicacion]
+      properties:
+        id: { type: integer }
+        codigo: { type: string }
+        nombre: { type: string }
+        descripcion: { type: string }
+        stockFisico: { type: integer, minimum: 0 }
+        stockReservado: { type: integer, minimum: 0 }
+        stockDisponible: { type: integer, description: "stockFisico - stockReservado" }
+        umbralMinimo: { type: integer, minimum: 0 }
+        ubicacion: { $ref: "#/components/schemas/Ubicacion" }
+
+    RepuestoNuevo:
+      type: object
+      required: [codigo, nombre, umbralMinimo, ubicacion]
+      properties:
+        codigo: { type: string }
+        nombre: { type: string }
+        descripcion: { type: string }
+        umbralMinimo: { type: integer, minimum: 0 }
+        ubicacion: { $ref: "#/components/schemas/Ubicacion" }
+
+    CandidatoReconocimiento:
+      type: object
+      required: [confianza, repuesto]
+      properties:
+        confianza: { type: number, minimum: 0, maximum: 1 }
+        repuesto: { $ref: "#/components/schemas/Repuesto" }
+        maquinasCompatibles:
+          type: array
+          items: { type: string }
+
+    TipoMovimiento:
+      type: string
+      enum: [entrada, salida, reserva, liberacion, consumo]
+
+    MovimientoStock:
+      type: object
+      required: [id, tipo, cantidad, fecha, usuario]
+      properties:
+        id: { type: integer }
+        tipo: { $ref: "#/components/schemas/TipoMovimiento" }
+        cantidad: { type: integer, minimum: 1 }
+        fecha: { type: string, format: date-time }
+        usuario: { type: string }
+        referencia:
+          type: object
+          properties:
+            tipo: { type: string, enum: [pedido_compra, reparacion, reserva] }
+            id: { type: integer }
+
+    EstadoMaquina:
+      type: string
+      description: Provisorio, a validar con la cátedra.
+      enum: [operativa, en_mantenimiento, fuera_de_servicio]
+
+    Maquina:
+      type: object
+      required: [codigo, tipo, ejemplar, estado]
+      properties:
+        codigo: { type: string }
+        tipo: { type: string }
+        ejemplar: { type: string }
+        estado: { $ref: "#/components/schemas/EstadoMaquina" }
+        repuestosAMantener:
+          type: array
+          items: { type: string, description: "Código de repuesto" }
+
+    MaquinaNueva:
+      type: object
+      required: [codigo, tipo, ejemplar]
+      properties:
+        codigo: { type: string }
+        tipo: { type: string }
+        ejemplar: { type: string }
+        repuestosAMantener:
+          type: array
+          items: { type: string }
+
+    EstadoIncidencia:
+      type: string
+      description: Provisorio, a validar con la cátedra.
+      enum: [abierta, en_reparacion, resuelta]
+
+    Turno:
+      type: string
+      enum: [manana, tarde, noche]
+
+    Incidencia:
+      type: object
+      required: [id, maquinaCodigo, descripcion, estado, turno, creadaEn]
+      properties:
+        id: { type: integer }
+        maquinaCodigo: { type: string }
+        descripcion: { type: string }
+        fotos:
+          type: array
+          items: { type: string, format: uri }
+        estado: { $ref: "#/components/schemas/EstadoIncidencia" }
+        turno: { $ref: "#/components/schemas/Turno" }
+        creadaEn: { type: string, format: date-time }
+
+    Reparacion:
+      type: object
+      required: [id, incidenciaId, lineasUso, iniciadaEn]
+      properties:
+        id: { type: integer }
+        incidenciaId: { type: integer }
+        lineasUso:
+          type: array
+          items: { $ref: "#/components/schemas/LineaUso" }
+        iniciadaEn: { type: string, format: date-time }
+
+    LineaUsoNueva:
+      type: object
+      required: [repuestoCodigo, cantidad]
+      properties:
+        repuestoCodigo: { type: string }
+        cantidad: { type: integer, minimum: 1 }
+
+    LineaUso:
+      type: object
+      required: [id, reparacionId, repuestoCodigo, cantidad]
+      properties:
+        id: { type: integer }
+        reparacionId: { type: integer }
+        repuestoCodigo: { type: string }
+        cantidad: { type: integer, minimum: 1 }
+
+    ResultadoLineaUso:
+      type: object
+      required: [lineaUso, repuesto, alertaGenerada]
+      properties:
+        lineaUso: { $ref: "#/components/schemas/LineaUso" }
+        repuesto: { $ref: "#/components/schemas/Repuesto" }
+        alertaGenerada: { type: boolean }
+
+    ItemListaCompras:
+      type: object
+      required: [origen, repuestoCodigo, nombre]
+      properties:
+        origen: { type: string, enum: [umbral, manual] }
+        repuestoCodigo: { type: string }
+        nombre: { type: string }
+        stockDisponible: { type: integer }
+        umbralMinimo: { type: integer }
+        cantidadSugerida: { type: integer, minimum: 1 }
+        motivo: { type: string }
+
+    RequerimientoManualNuevo:
+      type: object
+      required: [repuestoCodigo, cantidadSugerida]
+      properties:
+        repuestoCodigo: { type: string }
+        cantidadSugerida: { type: integer, minimum: 1 }
+        motivo: { type: string }
+
+    Alerta:
+      type: object
+      required: [id, repuestoCodigo, stockDisponible, umbralMinimo, generadaEn]
+      properties:
+        id: { type: integer }
+        repuestoCodigo: { type: string }
+        stockDisponible: { type: integer }
+        umbralMinimo: { type: integer }
+        generadaEn: { type: string, format: date-time }
+
+    Urgencia:
+      type: string
+      enum: [normal, urgente]
+
+    EstadoPedido:
+      type: string
+      description: Provisorio, a validar con la cátedra.
+      enum: [pendiente, recibido, cancelado]
+
+    LineaPedido:
+      type: object
+      required: [repuestoCodigo, cantidad]
+      properties:
+        repuestoCodigo: { type: string }
+        cantidad: { type: integer, minimum: 1 }
+
+    PedidoCompraNuevo:
+      type: object
+      required: [urgencia, lineas]
+      properties:
+        urgencia: { $ref: "#/components/schemas/Urgencia" }
+        lineas:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/LineaPedido" }
+
+    PedidoCompra:
+      type: object
+      required: [id, lineas, urgencia, estado, creadoEn]
+      properties:
+        id: { type: integer }
+        lineas:
+          type: array
+          items: { $ref: "#/components/schemas/LineaPedido" }
+        urgencia: { $ref: "#/components/schemas/Urgencia" }
+        estado: { $ref: "#/components/schemas/EstadoPedido" }
+        creadoEn: { type: string, format: date-time }
+
+    RecepcionNueva:
+      type: object
+      required: [lineas]
+      properties:
+        delegadoA:
+          type: string
+          description: Usuario al que se delega la carga (RN-08).
+        lineas:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [repuestoCodigo, cantidad, ubicacion]
+            properties:
+              repuestoCodigo: { type: string }
+              cantidad: { type: integer, minimum: 1 }
+              ubicacion: { $ref: "#/components/schemas/Ubicacion" }
+
+    EstadoReserva:
+      type: string
+      description: Provisorio, a validar con la cátedra.
+      enum: [activa, liberada, ejecutada]
+
+    ReservaNueva:
+      type: object
+      required: [motivo, lineas]
+      properties:
+        motivo: { type: string }
+        lineas:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/LineaPedido" }
+
+    Reserva:
+      type: object
+      required: [id, lineas, motivo, estado]
+      properties:
+        id: { type: integer }
+        lineas:
+          type: array
+          items: { $ref: "#/components/schemas/LineaPedido" }
+        motivo: { type: string }
+        estado: { $ref: "#/components/schemas/EstadoReserva" }
