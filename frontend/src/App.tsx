@@ -9,6 +9,10 @@ import ReportarArreglo from "./pages/mantenimiento/ReportarArreglo";
 import RepuestosHome from "./pages/repuestos/RepuestosHome";
 import BuscarRepuesto from "./pages/repuestos/BuscarRepuesto";
 import IngresarRepuesto from "./pages/repuestos/IngresarRepuesto";
+import PanelEncargado from "./pages/encargado/PanelEncargado";
+import AutorizarReservas from "./pages/encargado/AutorizarReservas";
+import ListaCompras from "./pages/encargado/ListaCompras";
+import PanelGerencia from "./pages/gerencia/PanelGerencia";
 
 /** Si no hay rol elegido, manda a la pantalla de inicio. */
 function ConRol({ children }: { children: React.ReactNode }) {
@@ -84,7 +88,38 @@ export default function App() {
           </ConRol>
         }
       />
-
+      <Route
+        path="/encargado"
+        element={
+          <ConRol>
+            <PanelEncargado />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/reservas"
+        element={
+          <ConRol>
+            <AutorizarReservas />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/compras"
+        element={
+          <ConRol>
+            <ListaCompras />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/gerencia"
+        element={
+          <ConRol>
+            <PanelGerencia />
+          </ConRol>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
