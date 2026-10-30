@@ -59,7 +59,7 @@
 
 3.4 Actividad guiada 
 
-![Captura consola](image.png)
+![Captura consola](../santiagoMeccico/img/image.png)
 
 3.5 Preguntas guía (respondelas por escrito, en tu ticket)
     ¿Qué significa que fetch sea asincrónico? ¿Qué pasaría con la página si no lo fuera?
