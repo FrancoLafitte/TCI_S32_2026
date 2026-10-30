@@ -1,0 +1,68 @@
+
+openapi: 3.1.0
+
+info:
+  title: API de Incidencias
+  version: 1.0.0
+  description: API para consultar incidencias de máquinas.
+
+servers:
+  - url: http://127.0.0.1:4010
+
+paths:
+  /incidencias:
+    get:
+      summary: Obtener todas las incidencias
+      responses:
+        '200':
+          description: Lista de incidencias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Incidencia'
+              example:
+                - id: 1
+                  maquina: Torno
+                  descripcion: Falla en el motor
+                - id: 2
+                  maquina: Fresadora
+                  descripcion: Sobrecalentamiento
+
+  /incidencias/{id}:
+    get:
+      summary: Obtener una incidencia por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Incidencia encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incidencia'
+              example:
+                id: 1
+                maquina: Torno
+                descripcion: Falla en el motor
+
+components:
+  schemas:
+    Incidencia:
+      type: object
+      properties:
+        id:
+          type: integer
+        maquina:
+          type: string
+        descripcion:
+          type: string
+      required:
+        - id
+        - maquina
+        - descripcion
