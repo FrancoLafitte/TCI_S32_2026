@@ -10,6 +10,11 @@
     "test": "vitest run",
     "mock": "prism mock ../docs/contrato/openapi.yaml"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
