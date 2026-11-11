@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { HEALTH_URL } from "../api/client";
 import { ROLES, useRol } from "../rol";
+import { obtenerTurnoActual } from "../utils/turno";
 
 /** Píldora ONLINE/OFFLINE: consulta el /health REAL del backend cada 15 s (walking skeleton). */
 export function EstadoServidor() {
@@ -27,9 +28,14 @@ type Props = { titulo?: string; subtitulo?: string; volver?: string; children: R
 
 /** Estructura común: encabezado + contenido + barra inferior (o pie con botón de acción). */
 export default function Layout({ titulo, subtitulo, volver, children, pie, ancho }: Props) {
-  const { rol } = useRol();
+  const { rol, usuario, logout } = useRol();
   const nav = useNavigate();
   const info = rol ? ROLES[rol] : null;
+
+  const cerrarSesion = () => {
+    logout();
+    nav("/");
+  };
 
   return (
     <div className={`app ${ancho ? "app-ancho" : ""}`}>
@@ -41,7 +47,10 @@ export default function Layout({ titulo, subtitulo, volver, children, pie, ancho
         )}
         <div className="topbar-text">
           <strong>{titulo ?? info?.titulo}</strong>
-          <small>{subtitulo ?? info?.subtitulo}</small>
+          <small>
+            {usuario ? `${usuario.nombre} · ${info?.titulo}` : (subtitulo ?? info?.subtitulo)}
+            {rol === "operario" && ` · ${obtenerTurnoActual().etiqueta}`}
+          </small>
         </div>
         <EstadoServidor />
       </header>
@@ -54,8 +63,27 @@ export default function Layout({ titulo, subtitulo, volver, children, pie, ancho
         info && (
           <nav className="bottom-nav">
             <NavLink to={info.inicio} end>▦<span>Inicio</span></NavLink>
-            <NavLink to="/repuestos">▣<span>Repuestos</span></NavLink>
-            <Link to="/">◉<span>Cambiar rol</span></Link>
+            {rol === "operario" ? (
+              <NavLink to="/operario/incidencias">📋<span>Incidencias</span></NavLink>
+            ) : (
+              <NavLink to="/repuestos">▣<span>Repuestos</span></NavLink>
+            )}
+            <button
+              onClick={cerrarSesion}
+              style={{
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                fontSize: "inherit",
+                fontFamily: "inherit",
+              }}
+            >
+              ⎋<span>Salir</span>
+            </button>
           </nav>
         )
       )}
