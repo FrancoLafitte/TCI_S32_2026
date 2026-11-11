@@ -1,8 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useRol } from "./rol";
-import ElegirRol from "./pages/ElegirRol";
+import Login from "./pages/Login";
 import PanelOperario from "./pages/operario/PanelOperario";
 import ReportarIncidencia from "./pages/operario/ReportarIncidencia";
+import MisIncidencias from "./pages/operario/MisIncidencias";
 import PanelMantenimiento from "./pages/mantenimiento/PanelMantenimiento";
 import SeleccionarIncidencia from "./pages/mantenimiento/SeleccionarIncidencia";
 import ReportarArreglo from "./pages/mantenimiento/ReportarArreglo";
@@ -23,7 +24,7 @@ function ConRol({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<ElegirRol />} />
+      <Route path="/" element={<Login />} />
       <Route
         path="/operario"
         element={
@@ -37,6 +38,14 @@ export default function App() {
         element={
           <ConRol>
             <ReportarIncidencia />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/operario/incidencias"
+        element={
+          <ConRol>
+            <MisIncidencias />
           </ConRol>
         }
       />

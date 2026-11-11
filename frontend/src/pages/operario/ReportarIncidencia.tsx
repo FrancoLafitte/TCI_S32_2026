@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout, { Estado } from "../../components/Layout";
+import SelectorFotos from "../../components/SelectorFotos";
 import { api } from "../../api/client";
 import { useApi } from "../../api/useApi";
-import type { Incidencia, Maquina, Repuesto, TipoFalla, Urgencia } from "../../api/tipos";
+import type { Incidencia, Maquina, TipoFalla, Urgencia } from "../../api/tipos";
 
 const FALLAS: { valor: TipoFalla; texto: string }[] = [
   { valor: "perdida_presion", texto: "Pérdida de presión" },
@@ -15,14 +16,12 @@ const FALLAS: { valor: TipoFalla; texto: string }[] = [
 export default function ReportarIncidencia() {
   const nav = useNavigate();
   const maquinas = useApi<Maquina[]>("/maquinas");
-  const repuestos = useApi<Repuesto[]>("/repuestos");
 
   const [maquinaCodigo, setMaquinaCodigo] = useState("");
   const [prioridad, setPrioridad] = useState<Urgencia>("normal");
   const [tipoFalla, setTipoFalla] = useState<TipoFalla | null>(null);
   const [descripcion, setDescripcion] = useState("");
   const [fotos, setFotos] = useState<File[]>([]);
-  const [repuestoCodigo, setRepuestoCodigo] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creada, setCreada] = useState<Incidencia | null>(null);
@@ -42,7 +41,6 @@ export default function ReportarIncidencia() {
     fd.append("descripcion", descripcion);
     fd.append("prioridad", prioridad);
     if (tipoFalla) fd.append("tipoFalla", tipoFalla);
-    if (repuestoCodigo) fd.append("repuestosEstimados", JSON.stringify([{ repuestoCodigo, cantidad: 1 }]));
     fotos.forEach((f) => fd.append("fotos", f));
     try {
       setCreada(await api.post<Incidencia>("/incidencias", fd));
@@ -100,15 +98,7 @@ export default function ReportarIncidencia() {
         </div>
       </section>
 
-      <section className="card">
-        <label className="etiqueta">Evidencia visual ({fotos.length}/3)</label>
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => setFotos(Array.from(e.target.files ?? []).slice(0, 3))}
-        />
-      </section>
+      <SelectorFotos fotos={fotos} onFotosChange={setFotos} maxFotos={3} />
 
       <section className="card">
         <label className="etiqueta">Falla detectada</label>
@@ -126,16 +116,6 @@ export default function ReportarIncidencia() {
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
         />
-      </section>
-
-      <section className="card">
-        <label className="etiqueta">Repuestos estimados (opcional)</label>
-        <select className="input" value={repuestoCodigo} onChange={(e) => setRepuestoCodigo(e.target.value)}>
-          <option value="">Ninguno</option>
-          {repuestos.data?.map((r) => (
-            <option key={r.codigo} value={r.codigo}>{r.nombre} · stock {r.stockDisponible}</option>
-          ))}
-        </select>
       </section>
 
       {error && <p className="aviso aviso-error">{error}</p>}

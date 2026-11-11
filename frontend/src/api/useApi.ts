@@ -6,6 +6,9 @@ export function useApi<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [tick, setTick] = useState(0);
+
+  const recargar = () => setTick((t) => t + 1);
 
   useEffect(() => {
     let cancelado = false;
@@ -16,9 +19,9 @@ export function useApi<T>(path: string) {
       .catch((e: Error) => !cancelado && setError(e.message))
       .finally(() => !cancelado && setCargando(false));
     return () => { cancelado = true; };
-  }, [path]);
+  }, [path, tick]);
 
-  return { data, error, cargando };
+  return { data, error, cargando, recargar };
 }
 
 /** "hace 42 min", "hace 2 h"... */
