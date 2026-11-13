@@ -7,6 +7,8 @@ import MisIncidencias from "./pages/operario/MisIncidencias";
 import PanelMantenimiento from "./pages/mantenimiento/PanelMantenimiento";
 import SeleccionarIncidencia from "./pages/mantenimiento/SeleccionarIncidencia";
 import ReportarArreglo from "./pages/mantenimiento/ReportarArreglo";
+import HistorialArreglos from "./pages/mantenimiento/HistorialArreglos";
+import IncidenciasEnCuarentena from "./pages/mantenimiento/IncidenciasEnCuarentena";
 import RepuestosHome from "./pages/repuestos/RepuestosHome";
 import BuscarRepuesto from "./pages/repuestos/BuscarRepuesto";
 import IngresarRepuesto from "./pages/repuestos/IngresarRepuesto";
@@ -70,6 +72,22 @@ export default function App() {
         element={
           <ConRol>
             <ReportarArreglo />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/mantenimiento/arreglos"
+        element={
+          <ConRol>
+            <HistorialArreglos />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/mantenimiento/cuarentena"
+        element={
+          <ConRol>
+            <IncidenciasEnCuarentena />
           </ConRol>
         }
       />
