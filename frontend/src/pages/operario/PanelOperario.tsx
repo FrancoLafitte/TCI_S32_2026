@@ -57,23 +57,6 @@ export default function PanelOperario() {
         <p className="muted center" style={{ fontSize: "0.9rem", marginTop: "0.75rem" }}>
           Notificá paradas o anomalías al equipo técnico adjuntando fotos y código de máquina.
         </p>
-
-        <Link
-          to="/operario/incidencias"
-          className="btn"
-          style={{
-            marginTop: "1rem",
-            width: "100%",
-            padding: "0.75rem",
-            textAlign: "center",
-            background: "var(--superficie)",
-            border: "1px solid var(--borde)",
-            display: "block",
-            fontSize: "0.95rem",
-          }}
-        >
-          Ver incidencias reportadas
-        </Link>
       </div>
     </Layout>
   );

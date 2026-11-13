@@ -31,7 +31,7 @@ export type Maquina = {
 };
 
 export type LineaPedido = { repuestoCodigo: string; cantidad: number };
-export type EstadoIncidencia = "abierta" | "en_reparacion" | "espera_repuesto" | "resuelta";
+export type EstadoIncidencia = "abierta" | "en_reparacion" | "espera_repuesto" | "resuelta" | "en_cuarentena" | "detenida";
 export type TipoFalla = "perdida_presion" | "ruido_anomalo" | "fuga_fluido" | "otro";
 
 export type Incidencia = {

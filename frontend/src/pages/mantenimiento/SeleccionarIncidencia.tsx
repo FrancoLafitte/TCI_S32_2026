@@ -1,23 +1,31 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout, { Estado } from "../../components/Layout";
-import { haceCuanto, useApi } from "../../api/useApi";
+import { haceCuanto } from "../../api/useApi";
+import { useIncidencias } from "../../api/useIncidencias";
 import type { Incidencia } from "../../api/tipos";
 import { ChipIncidencia } from "./componentes";
 
-type Filtro = "todas" | "urgentes" | "espera";
+type Filtro = "todas" | "urgentes" | "detenidas" | "espera";
 
 export default function SeleccionarIncidencia() {
   const nav = useNavigate();
-  const { data, cargando, error } = useApi<Incidencia[]>("/incidencias");
+  const { incidencias, cargando, error } = useIncidencias();
   const [texto, setTexto] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todas");
   const [elegida, setElegida] = useState<Incidencia | null>(null);
 
-  const todas = (data ?? []).filter((i) => i.estado !== "resuelta");
+  const todas = incidencias.filter(
+    (i) => i.estado !== "resuelta" && i.estado !== "en_cuarentena"
+  );
   // Prism no filtra, así que filtramos en el navegador.
   const visibles = todas
-    .filter((i) => filtro === "todas" || (filtro === "urgentes" ? i.prioridad === "urgente" : i.estado === "espera_repuesto"))
+    .filter((i) => {
+      if (filtro === "urgentes") return i.prioridad === "urgente";
+      if (filtro === "detenidas") return i.estado === "detenida";
+      if (filtro === "espera") return i.estado === "espera_repuesto";
+      return true;
+    })
     .filter((i) => `${i.id} ${i.maquina?.nombre} ${i.maquina?.linea}`.toLowerCase().includes(texto.toLowerCase()));
 
   return (
@@ -38,6 +46,9 @@ export default function SeleccionarIncidencia() {
         <button className={`chip-btn ${filtro === "urgentes" ? "activa" : ""}`} onClick={() => setFiltro("urgentes")}>
           Urgentes ({todas.filter((i) => i.prioridad === "urgente").length})
         </button>
+        <button className={`chip-btn ${filtro === "detenidas" ? "activa" : ""}`} onClick={() => setFiltro("detenidas")}>
+          Detenidas ({todas.filter((i) => i.estado === "detenida").length})
+        </button>
         <button className={`chip-btn ${filtro === "espera" ? "activa" : ""}`} onClick={() => setFiltro("espera")}>Espera repuesto</button>
       </div>
 
@@ -46,7 +57,12 @@ export default function SeleccionarIncidencia() {
         {visibles.map((i) => (
           <button
             key={i.id}
-            className={`card tarjeta-sel borde-${i.prioridad === "urgente" ? "error" : i.estado === "espera_repuesto" ? "warn" : "neutro"} ${elegida?.id === i.id ? "seleccionada" : ""}`}
+            className={`card tarjeta-sel borde-${i.estado === "detenida" ? "neutro" : i.prioridad === "urgente" ? "error" : "warn"} ${elegida?.id === i.id ? "seleccionada" : ""}`}
+            style={
+              i.estado === "detenida"
+                ? { borderLeft: "5px solid #1e293b", background: "var(--superficie-baja)" }
+                : undefined
+            }
             onClick={() => setElegida(i)}
           >
             <div className="fila">
