@@ -43,7 +43,27 @@ export default function ReportarIncidencia() {
     if (tipoFalla) fd.append("tipoFalla", tipoFalla);
     fotos.forEach((f) => fd.append("fotos", f));
     try {
-      setCreada(await api.post<Incidencia>("/incidencias", fd));
+      const res = await api.post<Incidencia>("/incidencias", fd);
+      // Generar un ID único para la nueva incidencia si el mock repite siempre el mismo
+      const guardadas: Incidencia[] = JSON.parse(localStorage.getItem("incidencias_creadas_local") ?? "[]");
+      const nuevoId = Math.max(300, ...guardadas.map((x) => x.id), res.id ?? 0) + 1;
+
+      const nuevaIncidencia: Incidencia = {
+        id: nuevoId,
+        maquinaCodigo,
+        maquina: maquina ? { codigo: maquina.codigo, nombre: maquina.nombre ?? maquina.codigo, linea: maquina.linea } : undefined,
+        descripcion,
+        tipoFalla: tipoFalla ?? undefined,
+        prioridad,
+        fotos: fotos.map((f) => f.name),
+        estado: "abierta",
+        turno: "manana",
+        reportadaPor: localStorage.getItem("usuario_nombre") ?? "Operario",
+        creadaEn: new Date().toISOString(),
+      };
+
+      localStorage.setItem("incidencias_creadas_local", JSON.stringify([nuevaIncidencia, ...guardadas]));
+      setCreada(nuevaIncidencia);
     } catch (e) {
       setError((e as Error).message);
     } finally {

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import Layout, { Estado } from "../../components/Layout";
 import { api } from "../../api/client";
-import { useApi } from "../../api/useApi";
+import { useIncidencias, CLAVE_INCIDENCIAS_LOCALES, CLAVE_INCIDENCIAS_ELIMINADAS } from "../../api/useIncidencias";
 import type { Incidencia, Urgencia } from "../../api/tipos";
 
 export default function MisIncidencias() {
-  const { data, cargando, error, recargar } = useApi<Incidencia[]>("/incidencias");
-  const [incidenciasLocales, setIncidenciasLocales] = useState<Incidencia[] | null>(null);
+  const { incidencias, cargando, error, recargar } = useIncidencias();
+  const [, setTick] = useState(0);
 
   // Estado para modal / edición rápida
   const [editando, setEditando] = useState<Incidencia | null>(null);
@@ -15,7 +15,7 @@ export default function MisIncidencias() {
   const [guardando, setGuardando] = useState(false);
   const [mensajeAccion, setMensajeAccion] = useState<string | null>(null);
 
-  const lista = incidenciasLocales ?? data ?? [];
+  const lista = incidencias;
 
   const iniciarEdicion = (inc: Incidencia) => {
     setEditando(inc);
@@ -29,23 +29,41 @@ export default function MisIncidencias() {
     setGuardando(true);
     setMensajeAccion(null);
     try {
-      // Si el backend/mock soporta PATCH /incidencias/:id
       try {
         await api.patch(`/incidencias/${editando.id}`, {
           descripcion: descripcionEdit,
           prioridad: prioridadEdit,
         });
       } catch {
-        // En caso de que el mock no tenga implementado PATCH, actualizamos el estado local
+        // En caso de que el mock no tenga implementado PATCH
       }
 
-      const actualizadas = lista.map((item) =>
-        item.id === editando.id
-          ? { ...item, descripcion: descripcionEdit, prioridad: prioridadEdit }
-          : item
+      // Si la incidencia estaba guardada en creadas localmente, actualizarla allí
+      const guardadas: Incidencia[] = JSON.parse(
+        localStorage.getItem(CLAVE_INCIDENCIAS_LOCALES) ?? "[]"
       );
-      setIncidenciasLocales(actualizadas);
+      const enGuardadas = guardadas.some((x) => x.id === editando.id);
+      if (enGuardadas) {
+        const actualizadas = guardadas.map((x) =>
+          x.id === editando.id
+            ? { ...x, descripcion: descripcionEdit, prioridad: prioridadEdit }
+            : x
+        );
+        localStorage.setItem(CLAVE_INCIDENCIAS_LOCALES, JSON.stringify(actualizadas));
+      } else {
+        // Si era del mock, agregamos como copia local actualizada
+        localStorage.setItem(
+          CLAVE_INCIDENCIAS_LOCALES,
+          JSON.stringify([
+            { ...editando, descripcion: descripcionEdit, prioridad: prioridadEdit },
+            ...guardadas,
+          ])
+        );
+      }
+
       setEditando(null);
+      setTick((t) => t + 1);
+      recargar();
       setMensajeAccion(`Incidencia #${editando.id} actualizada con éxito.`);
     } catch (e) {
       setMensajeAccion(`Error al actualizar: ${(e as Error).message}`);
@@ -65,8 +83,27 @@ export default function MisIncidencias() {
       } catch {
         // Fallback local si el mock no soporta DELETE
       }
-      const filtradas = lista.filter((item) => item.id !== id);
-      setIncidenciasLocales(filtradas);
+
+      // Quitar de guardadas si estaba allí
+      const guardadas: Incidencia[] = JSON.parse(
+        localStorage.getItem(CLAVE_INCIDENCIAS_LOCALES) ?? "[]"
+      );
+      const filtradas = guardadas.filter((x) => x.id !== id);
+      localStorage.setItem(CLAVE_INCIDENCIAS_LOCALES, JSON.stringify(filtradas));
+
+      // Agregar a lista negra de eliminadas
+      const eliminadas: number[] = JSON.parse(
+        localStorage.getItem(CLAVE_INCIDENCIAS_ELIMINADAS) ?? "[]"
+      );
+      if (!eliminadas.includes(id)) {
+        localStorage.setItem(
+          CLAVE_INCIDENCIAS_ELIMINADAS,
+          JSON.stringify([...eliminadas, id])
+        );
+      }
+
+      setTick((t) => t + 1);
+      recargar();
       setMensajeAccion(`Incidencia #${id} eliminada.`);
     } catch (e) {
       setMensajeAccion(`Error al eliminar: ${(e as Error).message}`);
@@ -80,7 +117,7 @@ export default function MisIncidencias() {
         <button
           type="button"
           onClick={() => {
-            setIncidenciasLocales(null);
+            setTick((t) => t + 1);
             recargar();
           }}
           className="btn"
@@ -181,7 +218,7 @@ export default function MisIncidencias() {
             className="card"
             style={{
               padding: "0.85rem",
-              borderLeft: inc.prioridad === "urgente" ? "4px solid var(--error)" : "4px solid var(--borde)",
+              borderLeft: inc.prioridad === "urgente" ? "4px solid var(--error)" : "4px solid var(--warn)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -197,8 +234,8 @@ export default function MisIncidencias() {
                     fontSize: "0.75rem",
                     padding: "0.2rem 0.45rem",
                     borderRadius: "4px",
-                    background: inc.prioridad === "urgente" ? "var(--error-fondo)" : "var(--superficie-media)",
-                    color: inc.prioridad === "urgente" ? "var(--error)" : "var(--texto)",
+                    background: inc.prioridad === "urgente" ? "var(--error-fondo)" : "var(--warn-fondo)",
+                    color: inc.prioridad === "urgente" ? "var(--error)" : "var(--warn)",
                     fontWeight: "bold",
                   }}
                 >
