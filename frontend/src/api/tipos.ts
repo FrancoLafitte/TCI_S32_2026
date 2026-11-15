@@ -57,6 +57,10 @@ export type Reparacion = {
   lineasUso: LineaUso[];
   iniciadaEn: string;
   cerradaEn?: string;
+  minutosIntervencion?: number;
+  accionCorrectiva?: AccionCorrectiva;
+  notas?: string;
+  estadoMaquina?: EstadoMaquina;
 };
 export type ResultadoLineaUso = { lineaUso: LineaUso; repuesto: Repuesto; alertaGenerada: boolean };
 
@@ -91,6 +95,18 @@ export type Reserva = {
   solicitadaPor?: string;
   creadaEn?: string;
   estado: "activa" | "liberada" | "ejecutada";
+};
+
+export type TipoMovimiento = "entrada" | "salida" | "reserva" | "liberacion" | "consumo";
+
+export type MovimientoStock = {
+  id: number;
+  tipo: TipoMovimiento;
+  cantidad: number;
+  fecha: string;
+  usuario: string;
+  lote?: string;
+  referencia?: { tipo?: string; id?: number };
 };
 
 export type ResumenTablero = {
