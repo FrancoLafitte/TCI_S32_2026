@@ -30,6 +30,29 @@ export type Maquina = {
   repuestosAMantener?: string[];
 };
 
+export type MaquinaCreate = {
+  codigo: string;
+  nombre?: string;
+  tipo: string;
+  ejemplar: string;
+  linea?: string;
+  estado?: EstadoMaquina;
+  repuestosAMantener?: string[];
+};
+
+export type MaquinaUpdate = {
+  nombre?: string;
+  tipo?: string;
+  ejemplar?: string;
+  linea?: string;
+  estado?: EstadoMaquina;
+  repuestosAMantener?: string[];
+};
+
+export type VincularRepuesto = {
+  repuestoCodigo: string;
+};
+
 export type LineaPedido = { repuestoCodigo: string; cantidad: number };
 export type EstadoIncidencia = "abierta" | "en_reparacion" | "espera_repuesto" | "resuelta" | "en_cuarentena" | "detenida";
 export type TipoFalla = "perdida_presion" | "ruido_anomalo" | "fuga_fluido" | "otro";
