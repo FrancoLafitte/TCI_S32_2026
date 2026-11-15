@@ -16,7 +16,7 @@ export default function PanelMantenimiento() {
     <Layout>
       <Link to="/reparar" className="banner-negro">
         <div>
-          <strong>Reportar Arreglo ⚡</strong>
+          <strong>Reportar Arreglo</strong>
           <small>Seleccionar incidencia y escanear repuestos</small>
         </div>
         <span>→</span>
@@ -57,7 +57,7 @@ export default function PanelMantenimiento() {
       </Link>
 
       <div className="fila-titulo">
-        <h2 className="h2">⚠ Incidencias recientes</h2>
+        <h2 className="h2">▲ Incidencias recientes</h2>
         <span className="muted">{activas.length} activas</span>
       </div>
       <Estado cargando={cargando} error={error} />
