@@ -64,8 +64,8 @@ export default function Layout({ titulo, subtitulo, volver, children, pie, ancho
           <nav className="bottom-nav">
             <NavLink to={info.inicio} end>▦<span>Inicio</span></NavLink>
             {rol === "operario" ? (
-              <NavLink to="/operario/incidencias">📋<span>Incidencias</span></NavLink>
-            ) : (
+              <NavLink to="/operario/incidencias">▤<span>Incidencias</span></NavLink>
+            ) : rol === "gerencia" ? null : (
               <NavLink to="/repuestos">▣<span>Repuestos</span></NavLink>
             )}
             <button
@@ -93,6 +93,6 @@ export default function Layout({ titulo, subtitulo, volver, children, pie, ancho
 
 export function Estado({ cargando, error }: { cargando: boolean; error: string | null }) {
   if (cargando) return <p className="muted">Cargando…</p>;
-  if (error) return <p className="aviso aviso-error">No se pudo cargar: {error}. ¿Está levantado el mock (puerto 4010)?</p>;
+  if (error) return <p className="aviso aviso-error">No se pudo cargar: {error}</p>;
   return null;
 }

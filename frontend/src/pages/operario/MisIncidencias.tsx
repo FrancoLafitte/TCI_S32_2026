@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Layout, { Estado } from "../../components/Layout";
 import { api } from "../../api/client";
-import { useIncidencias, CLAVE_INCIDENCIAS_LOCALES, CLAVE_INCIDENCIAS_ELIMINADAS } from "../../api/useIncidencias";
+import { useIncidencias } from "../../api/useIncidencias";
 import type { Incidencia, Urgencia } from "../../api/tipos";
 
 export default function MisIncidencias() {
@@ -14,8 +14,21 @@ export default function MisIncidencias() {
   const [prioridadEdit, setPrioridadEdit] = useState<Urgencia>("normal");
   const [guardando, setGuardando] = useState(false);
   const [mensajeAccion, setMensajeAccion] = useState<string | null>(null);
+  const [paginaActual, setPaginaActual] = useState(1);
 
-  const lista = incidencias;
+  const TAMANO_PAGINA = 5;
+
+  // Ordenar del más nuevo al más viejo por fecha (y por id de respaldo)
+  const incidenciasOrdenadas = [...incidencias].sort((a, b) => {
+    const fechaA = new Date(a.creadaEn).getTime();
+    const fechaB = new Date(b.creadaEn).getTime();
+    if (fechaB !== fechaA) return fechaB - fechaA;
+    return b.id - a.id;
+  });
+
+  const totalPaginas = Math.ceil(incidenciasOrdenadas.length / TAMANO_PAGINA) || 1;
+  const inicio = (paginaActual - 1) * TAMANO_PAGINA;
+  const lista = incidenciasOrdenadas.slice(inicio, inicio + TAMANO_PAGINA);
 
   const iniciarEdicion = (inc: Incidencia) => {
     setEditando(inc);
@@ -29,37 +42,10 @@ export default function MisIncidencias() {
     setGuardando(true);
     setMensajeAccion(null);
     try {
-      try {
-        await api.patch(`/incidencias/${editando.id}`, {
-          descripcion: descripcionEdit,
-          prioridad: prioridadEdit,
-        });
-      } catch {
-        // En caso de que el mock no tenga implementado PATCH
-      }
-
-      // Si la incidencia estaba guardada en creadas localmente, actualizarla allí
-      const guardadas: Incidencia[] = JSON.parse(
-        localStorage.getItem(CLAVE_INCIDENCIAS_LOCALES) ?? "[]"
-      );
-      const enGuardadas = guardadas.some((x) => x.id === editando.id);
-      if (enGuardadas) {
-        const actualizadas = guardadas.map((x) =>
-          x.id === editando.id
-            ? { ...x, descripcion: descripcionEdit, prioridad: prioridadEdit }
-            : x
-        );
-        localStorage.setItem(CLAVE_INCIDENCIAS_LOCALES, JSON.stringify(actualizadas));
-      } else {
-        // Si era del mock, agregamos como copia local actualizada
-        localStorage.setItem(
-          CLAVE_INCIDENCIAS_LOCALES,
-          JSON.stringify([
-            { ...editando, descripcion: descripcionEdit, prioridad: prioridadEdit },
-            ...guardadas,
-          ])
-        );
-      }
+      await api.patch(`/incidencias/${editando.id}`, {
+        descripcion: descripcionEdit,
+        prioridad: prioridadEdit,
+      });
 
       setEditando(null);
       setTick((t) => t + 1);
@@ -78,30 +64,7 @@ export default function MisIncidencias() {
     }
     setMensajeAccion(null);
     try {
-      try {
-        await api.delete(`/incidencias/${id}`);
-      } catch {
-        // Fallback local si el mock no soporta DELETE
-      }
-
-      // Quitar de guardadas si estaba allí
-      const guardadas: Incidencia[] = JSON.parse(
-        localStorage.getItem(CLAVE_INCIDENCIAS_LOCALES) ?? "[]"
-      );
-      const filtradas = guardadas.filter((x) => x.id !== id);
-      localStorage.setItem(CLAVE_INCIDENCIAS_LOCALES, JSON.stringify(filtradas));
-
-      // Agregar a lista negra de eliminadas
-      const eliminadas: number[] = JSON.parse(
-        localStorage.getItem(CLAVE_INCIDENCIAS_ELIMINADAS) ?? "[]"
-      );
-      if (!eliminadas.includes(id)) {
-        localStorage.setItem(
-          CLAVE_INCIDENCIAS_ELIMINADAS,
-          JSON.stringify([...eliminadas, id])
-        );
-      }
-
+      await api.delete(`/incidencias/${id}`);
       setTick((t) => t + 1);
       recargar();
       setMensajeAccion(`Incidencia #${id} eliminada.`);
@@ -299,6 +262,46 @@ export default function MisIncidencias() {
           </article>
         ))}
       </div>
+
+      {/* Controles de paginación (5 por página) */}
+      {incidenciasOrdenadas.length > TAMANO_PAGINA && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: "1.25rem",
+            padding: "0.75rem",
+            background: "var(--superficie)",
+            borderRadius: "var(--radio)",
+            boxShadow: "var(--sombra)",
+          }}
+        >
+          <button
+            type="button"
+            className="btn"
+            disabled={paginaActual === 1}
+            onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
+            style={{ fontSize: "0.85rem", padding: "0.4rem 0.8rem" }}
+          >
+            ← Anterior
+          </button>
+
+          <span style={{ fontSize: "0.85rem", fontWeight: 700 }} className="muted">
+            Página {paginaActual} de {totalPaginas}
+          </span>
+
+          <button
+            type="button"
+            className="btn"
+            disabled={paginaActual >= totalPaginas}
+            onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
+            style={{ fontSize: "0.85rem", padding: "0.4rem 0.8rem" }}
+          >
+            Siguiente →
+          </button>
+        </div>
+      )}
     </Layout>
   );
 }

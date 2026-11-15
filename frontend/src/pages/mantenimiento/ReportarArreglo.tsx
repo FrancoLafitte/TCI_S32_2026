@@ -85,34 +85,6 @@ export default function ReportarArreglo() {
         notas,
         estadoMaquina,
       });
-      // Guardar también en localStorage para el listado histórico de arreglos
-      const arregloParaHistorial = {
-        id: rep.id,
-        incidenciaId: Number(id),
-        maquina: incData?.maquina?.nombre ?? incData?.maquinaCodigo ?? "Máquina",
-        fecha: new Date().toISOString(),
-        accionCorrectiva: accion,
-        notas,
-        estadoMaquina,
-        repuestosUtilizados: lineas.map((l) => ({
-          codigo: l.repuesto.codigo,
-          nombre: l.repuesto.nombre,
-          cantidad: l.cantidad,
-        })),
-      };
-      const guardados = JSON.parse(localStorage.getItem("historial_arreglos") ?? "[]");
-      localStorage.setItem("historial_arreglos", JSON.stringify([arregloParaHistorial, ...guardados]));
-
-      // Actualizar estado de la incidencia en localStorage según estado resultante del equipo
-      const overrides: Record<string, string> = JSON.parse(localStorage.getItem("incidencias_estado_override") ?? "{}");
-      if (estadoMaquina === "operativa") {
-        overrides[String(id)] = "resuelta";
-      } else if (estadoMaquina === "en_pruebas") {
-        overrides[String(id)] = "en_cuarentena";
-      } else if (estadoMaquina === "fuera_de_servicio") {
-        overrides[String(id)] = "detenida";
-      }
-      localStorage.setItem("incidencias_estado_override", JSON.stringify(overrides));
 
       setResultado({ rep: cerrada, alertas });
     } catch (e) {
@@ -194,7 +166,7 @@ export default function ReportarArreglo() {
           </div>
           <strong className="h3">{incData.maquina?.nombre ?? incData.maquinaCodigo}</strong>
           <small className="muted">{incData.maquina?.linea}</small>
-          <p className="aviso aviso-error">⚠ {incData.descripcion}</p>
+          <p className="aviso aviso-error">▲ {incData.descripcion}</p>
         </section>
       )}
 
@@ -223,7 +195,7 @@ export default function ReportarArreglo() {
               </button>
             </div>
             <strong>{l.repuesto.nombre}</strong>
-            <small className="muted">📦 {l.repuesto.ubicacion.descripcion ?? l.repuesto.ubicacion.codigo}</small>
+            <small className="muted">▣ {l.repuesto.ubicacion.descripcion ?? l.repuesto.ubicacion.codigo}</small>
             <div className="stepper">
               <button className="btn" onClick={() => cambiarCantidad(l.repuesto.codigo, -1)}>−</button>
               <span>{l.cantidad}</span>

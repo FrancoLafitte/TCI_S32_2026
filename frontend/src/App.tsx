@@ -11,6 +11,7 @@ import HistorialArreglos from "./pages/mantenimiento/HistorialArreglos";
 import IncidenciasEnCuarentena from "./pages/mantenimiento/IncidenciasEnCuarentena";
 import RepuestosHome from "./pages/repuestos/RepuestosHome";
 import BuscarRepuesto from "./pages/repuestos/BuscarRepuesto";
+import TrazabilidadRepuesto from "./pages/repuestos/TrazabilidadRepuesto";
 import IngresarRepuesto from "./pages/repuestos/IngresarRepuesto";
 import PanelEncargado from "./pages/encargado/PanelEncargado";
 import AutorizarReservas from "./pages/encargado/AutorizarReservas";
@@ -104,6 +105,14 @@ export default function App() {
         element={
           <ConRol>
             <BuscarRepuesto />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/repuestos/:codigo/trazabilidad"
+        element={
+          <ConRol>
+            <TrazabilidadRepuesto />
           </ConRol>
         }
       />

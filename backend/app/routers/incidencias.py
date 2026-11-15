@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File, status
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.database import get_session
@@ -147,3 +148,65 @@ def obtener_incidencia(
             detail=f"No se encontró la incidencia #{id}",
         )
     return serializar_incidencia(inc, session)
+
+
+class IncidenciaUpdate(BaseModel):
+    descripcion: Optional[str] = None
+    prioridad: Optional[str] = None
+    estado: Optional[str] = None
+
+
+@router.patch("/{id}", response_model=IncidenciaOut)
+def actualizar_incidencia(
+    id: int,
+    data: IncidenciaUpdate,
+    session: Session = Depends(get_session),
+) -> IncidenciaOut:
+    """Actualiza campos editables de una incidencia (descripción, prioridad, estado)."""
+    inc = session.exec(select(Incidencia).where(Incidencia.id == id)).first()
+    if not inc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No se encontró la incidencia #{id}",
+        )
+
+    if data.descripcion is not None:
+        inc.descripcion = data.descripcion
+    if data.prioridad is not None:
+        inc.prioridad = data.prioridad
+    if data.estado is not None:
+        inc.estado = data.estado
+        # Si la incidencia se aprueba y pasa a resuelta, actualizar también su máquina y reparación asociada a operativa
+        if data.estado == "resuelta":
+            if inc.maquina_codigo:
+                maq = session.exec(select(Maquina).where(Maquina.codigo == inc.maquina_codigo)).first()
+                if maq and maq.estado == "en_pruebas":
+                    maq.estado = "operativa"
+                    session.add(maq)
+            from app.models import Reparacion
+            reps = session.exec(select(Reparacion).where(Reparacion.incidencia_id == inc.id)).all()
+            for r in reps:
+                if r.estado_maquina == "en_pruebas":
+                    r.estado_maquina = "operativa"
+                    session.add(r)
+
+    session.add(inc)
+    session.commit()
+    session.refresh(inc)
+    return serializar_incidencia(inc, session)
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_incidencia(
+    id: int, session: Session = Depends(get_session)
+):
+    """Elimina una incidencia de la base de datos."""
+    inc = session.exec(select(Incidencia).where(Incidencia.id == id)).first()
+    if not inc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No se encontró la incidencia #{id}",
+        )
+    session.delete(inc)
+    session.commit()
+    return None

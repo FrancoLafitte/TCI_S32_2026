@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Layout, { Estado } from "../../components/Layout";
 import SelectorFotos from "../../components/SelectorFotos";
+import ModalEscanerMaquina from "../../components/ModalEscanerMaquina";
 import { api } from "../../api/client";
 import { useApi } from "../../api/useApi";
 import type { Incidencia, Maquina, TipoFalla, Urgencia } from "../../api/tipos";
@@ -15,9 +16,14 @@ const FALLAS: { valor: TipoFalla; texto: string }[] = [
 
 export default function ReportarIncidencia() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const maquinas = useApi<Maquina[]>("/maquinas");
 
   const [maquinaCodigo, setMaquinaCodigo] = useState("");
+  const [escanerAbierto, setEscanerAbierto] = useState(
+    searchParams.get("scan") === "1" || searchParams.get("scan") === "true"
+  );
+  const [escaneadaExito, setEscaneadaExito] = useState(false);
   const [prioridad, setPrioridad] = useState<Urgencia>("normal");
   const [tipoFalla, setTipoFalla] = useState<TipoFalla | null>(null);
   const [descripcion, setDescripcion] = useState("");
@@ -25,6 +31,15 @@ export default function ReportarIncidencia() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creada, setCreada] = useState<Incidencia | null>(null);
+
+  // Auto-seleccionar si se recibió ?maquina=CODIGO
+  useEffect(() => {
+    const param = searchParams.get("maquina");
+    if (param) {
+      setMaquinaCodigo(param);
+      setEscaneadaExito(true);
+    }
+  }, [searchParams]);
 
   const maquina = maquinas.data?.find((m) => m.codigo === maquinaCodigo);
 
@@ -44,26 +59,7 @@ export default function ReportarIncidencia() {
     fotos.forEach((f) => fd.append("fotos", f));
     try {
       const res = await api.post<Incidencia>("/incidencias", fd);
-      // Generar un ID único para la nueva incidencia si el mock repite siempre el mismo
-      const guardadas: Incidencia[] = JSON.parse(localStorage.getItem("incidencias_creadas_local") ?? "[]");
-      const nuevoId = Math.max(300, ...guardadas.map((x) => x.id), res.id ?? 0) + 1;
-
-      const nuevaIncidencia: Incidencia = {
-        id: nuevoId,
-        maquinaCodigo,
-        maquina: maquina ? { codigo: maquina.codigo, nombre: maquina.nombre ?? maquina.codigo, linea: maquina.linea } : undefined,
-        descripcion,
-        tipoFalla: tipoFalla ?? undefined,
-        prioridad,
-        fotos: fotos.map((f) => f.name),
-        estado: "abierta",
-        turno: "manana",
-        reportadaPor: localStorage.getItem("usuario_nombre") ?? "Operario",
-        creadaEn: new Date().toISOString(),
-      };
-
-      localStorage.setItem("incidencias_creadas_local", JSON.stringify([nuevaIncidencia, ...guardadas]));
-      setCreada(nuevaIncidencia);
+      setCreada(res);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -90,20 +86,63 @@ export default function ReportarIncidencia() {
       volver="/operario"
       pie={
         <button className="btn btn-primario btn-grande" disabled={enviando} onClick={enviar}>
-          {enviando ? "Enviando…" : "➤ Enviar reporte de incidencia"}
+          {enviando ? "Enviando…" : "▶ Enviar reporte de incidencia"}
         </button>
       }
     >
       <section className="card">
-        <label className="etiqueta">Equipo afectado</label>
+        <div className="fila" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <label className="etiqueta" style={{ margin: 0 }}>
+            Equipo afectado
+          </label>
+          <button
+            type="button"
+            className="chip-btn"
+            style={{
+              fontSize: "12px",
+              padding: "6px 12px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "var(--superficie-baja)",
+              border: "1px solid var(--superficie-alta)",
+            }}
+            onClick={() => setEscanerAbierto(true)}
+          >
+            <span style={{ fontSize: "14px" }}>⌕</span>
+            <strong>Escanear QR / Código</strong>
+          </button>
+        </div>
+
         <Estado cargando={maquinas.cargando} error={maquinas.error} />
-        <select className="input" value={maquinaCodigo} onChange={(e) => setMaquinaCodigo(e.target.value)}>
+        <select
+          className="input"
+          value={maquinaCodigo}
+          onChange={(e) => {
+            setMaquinaCodigo(e.target.value);
+            setEscaneadaExito(false);
+          }}
+        >
           <option value="">Elegí o escaneá la máquina…</option>
           {maquinas.data?.map((m) => (
-            <option key={m.codigo} value={m.codigo}>{m.nombre ?? m.codigo}</option>
+            <option key={m.codigo} value={m.codigo}>
+              {m.nombre ?? m.codigo} ({m.codigo})
+            </option>
           ))}
         </select>
-        {maquina && <p className="muted">{maquina.linea} · <span className="chip chip-ok">{maquina.estado}</span></p>}
+        {maquina && (
+          <div className="fila" style={{ marginTop: "4px" }}>
+            <p className="muted" style={{ margin: 0 }}>
+              {maquina.linea || "Línea general"} ·{" "}
+              <span className="chip chip-ok">{maquina.estado}</span>
+            </p>
+            {escaneadaExito && (
+              <span className="chip chip-ok" style={{ fontSize: "11px" }}>
+                ✓ Escaneada exitosamente
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
       <section>
@@ -113,7 +152,7 @@ export default function ReportarIncidencia() {
             <strong>Normal</strong><small>Intervención de rutina</small>
           </button>
           <button className={`opcion opcion-urgente ${prioridad === "urgente" ? "activa" : ""}`} onClick={() => setPrioridad("urgente")}>
-            <strong>⚠ Urgente</strong><small>Riesgo / Parada</small>
+            <strong>▲ Urgente</strong><small>Riesgo / Parada</small>
           </button>
         </div>
       </section>
@@ -139,7 +178,16 @@ export default function ReportarIncidencia() {
       </section>
 
       {error && <p className="aviso aviso-error">{error}</p>}
-      <p className="aviso">✉ Notificación automática al Líder de Turno y al Taller vía correo.</p>
+
+      <ModalEscanerMaquina
+        abierto={escanerAbierto}
+        onCerrar={() => setEscanerAbierto(false)}
+        onSeleccionar={(cod) => {
+          setMaquinaCodigo(cod);
+          setEscaneadaExito(true);
+        }}
+        maquinasDisponibles={maquinas.data ?? []}
+      />
     </Layout>
   );
 }

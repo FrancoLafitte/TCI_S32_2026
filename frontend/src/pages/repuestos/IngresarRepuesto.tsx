@@ -8,7 +8,7 @@ export default function IngresarRepuesto() {
   const catalogo = useApi<Repuesto[]>("/repuestos");
 
   const [codigoSeleccionado, setCodigoSeleccionado] = useState("");
-  const [codigoSeguimiento, setCodigoSeguimiento] = useState("");
+  const [lote, setLote] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [ubicacionCodigo, setUbicacionCodigo] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -16,7 +16,7 @@ export default function IngresarRepuesto() {
   const [ok, setOk] = useState<{
     codigo: string;
     nombre: string;
-    codigoSeguimiento: string;
+    lote?: string;
     cantidadIngresada: number;
     stockFisico: number;
   } | null>(null);
@@ -39,7 +39,7 @@ export default function IngresarRepuesto() {
     return Array.from(mapa.entries()).map(([codigo, desc]) => ({ codigo, desc }));
   }, [catalogo.data]);
 
-  // Al seleccionar un repuesto, autocompletar ubicación sugerida y sugerir un código único de seguimiento
+  // Al seleccionar un repuesto, autocompletar ubicación sugerida
   function manejarCambioRepuesto(nuevoCodigo: string) {
     setCodigoSeleccionado(nuevoCodigo);
     setOk(null);
@@ -48,22 +48,11 @@ export default function IngresarRepuesto() {
     if (r?.ubicacion?.codigo) {
       setUbicacionCodigo(r.ubicacion.codigo);
     }
-    if (nuevoCodigo) {
-      // Sugerir código único para trazabilidad (ej: ART-REP-7742-892)
-      const numRandom = Math.floor(100 + Math.random() * 900);
-      setCodigoSeguimiento(`ART-${nuevoCodigo}-${numRandom}`);
-    } else {
-      setCodigoSeguimiento("");
-    }
   }
 
   async function confirmar() {
     if (!repuesto) {
       setError("Debes seleccionar un repuesto existente.");
-      return;
-    }
-    if (!codigoSeguimiento.trim()) {
-      setError("Debes asignar un código único de seguimiento / serie al artículo.");
       return;
     }
     if (!ubicacionCodigo) {
@@ -74,37 +63,24 @@ export default function IngresarRepuesto() {
     setError(null);
 
     try {
-      // Registro de ingreso al stock físico (RN-08)
+      // Registro de ingreso al stock físico (RN-08) y creación de MovimientoStock inmutable
       await api.post(`/repuestos/${repuesto.codigo}/ingresos`, {
         cantidad,
-        lote: codigoSeguimiento.trim(), // Se asocia el código único de seguimiento
+        lote: lote.trim() || undefined,
         ubicacion: { codigo: ubicacionCodigo },
       });
-
-      // Guardamos la trazabilidad del artículo en localStorage para seguimiento histórico
-      const historialArticulos = JSON.parse(localStorage.getItem("articulos_trazabilidad") ?? "[]");
-      const nuevoArticulo = {
-        codigoSeguimiento: codigoSeguimiento.trim(),
-        repuestoCodigo: repuesto.codigo,
-        nombre: repuesto.nombre,
-        cantidad,
-        ubicacion: ubicacionCodigo,
-        fechaIngreso: new Date().toISOString(),
-        estado: "en_stock",
-      };
-      localStorage.setItem("articulos_trazabilidad", JSON.stringify([nuevoArticulo, ...historialArticulos]));
 
       setOk({
         codigo: repuesto.codigo,
         nombre: repuesto.nombre,
-        codigoSeguimiento: codigoSeguimiento.trim(),
+        lote: lote.trim() || undefined,
         cantidadIngresada: cantidad,
         stockFisico: repuesto.stockFisico + cantidad,
       });
 
       // Resetear para un próximo ingreso
       setCodigoSeleccionado("");
-      setCodigoSeguimiento("");
+      setLote("");
       setCantidad(1);
       catalogo.recargar();
     } catch (e) {
@@ -122,7 +98,7 @@ export default function IngresarRepuesto() {
       pie={
         <button
           className="btn btn-primario btn-grande"
-          disabled={enviando || !repuesto || !codigoSeguimiento.trim() || !ubicacionCodigo}
+          disabled={enviando || !repuesto || !ubicacionCodigo}
           onClick={confirmar}
         >
           {enviando ? "Registrando ingreso…" : "▣ Confirmar ingreso al stock"}
@@ -134,8 +110,8 @@ export default function IngresarRepuesto() {
       {ok && (
         <div className="aviso aviso-ok">
           Se ingresaron +{ok.cantidadIngresada} unidad(es) de <strong>{ok.nombre} ({ok.codigo})</strong>.
-          <br />Código de seguimiento asignado: <strong>{ok.codigoSeguimiento}</strong>.
-          <br />Nuevo stock físico disponible: {ok.stockFisico} unidades.
+          {ok.lote && <><br />Lote de fabricación registrado: <strong>{ok.lote}</strong>.</>}
+          <br />Nuevo stock físico disponible: {ok.stockFisico} unidades (RN-08).
         </div>
       )}
 
@@ -175,18 +151,18 @@ export default function IngresarRepuesto() {
         )}
       </section>
 
-      {/* 2. Código único de seguimiento / serie */}
+      {/* 2. Lote del fabricante */}
       <section className="card">
-        <h3 className="h3"><span className="num">2</span> Trazabilidad / Identificación única</h3>
-        <label className="etiqueta">Código único asignado al artículo</label>
+        <h3 className="h3"><span className="num">2</span> Trazabilidad / Lote</h3>
+        <label className="etiqueta">Número de lote del fabricante (opcional)</label>
         <input
           className="input"
-          value={codigoSeguimiento}
-          onChange={(e) => setCodigoSeguimiento(e.target.value)}
-          placeholder="Ej: ART-REP-7742-101"
+          value={lote}
+          onChange={(e) => setLote(e.target.value)}
+          placeholder="Ej: L-2026-V98"
         />
         <small className="muted">
-          Este código identificará individualmente a este artículo para su seguimiento histórico (cuándo se usó, en qué máquina o reparación).
+          Permite registrar la trazabilidad farmacéutica del lote recibido (RN-06).
         </small>
       </section>
 

@@ -1,22 +1,20 @@
-import { useState } from "react";
 import Layout from "../../components/Layout";
-import { useIncidencias, CLAVE_ESTADO_OVERRIDES } from "../../api/useIncidencias";
+import { api } from "../../api/client";
+import { useIncidencias } from "../../api/useIncidencias";
 
 export default function IncidenciasEnCuarentena() {
   const { incidencias, cargando, recargar } = useIncidencias();
-  const [, setTick] = useState(0);
 
-  // Incidencias en cuarentena
+  // Incidencias en cuarentena directamente del backend
   const enCuarentena = incidencias.filter((inc) => inc.estado === "en_cuarentena");
 
-  function aprobar(incId: number) {
-    const overrides: Record<string, string> = JSON.parse(
-      localStorage.getItem(CLAVE_ESTADO_OVERRIDES) ?? "{}"
-    );
-    overrides[String(incId)] = "resuelta";
-    localStorage.setItem(CLAVE_ESTADO_OVERRIDES, JSON.stringify(overrides));
-    setTick((t) => t + 1);
-    recargar();
+  async function aprobar(incId: number) {
+    try {
+      await api.patch(`/incidencias/${incId}`, { estado: "resuelta" });
+      recargar();
+    } catch (e) {
+      alert(`Error al actualizar estado: ${(e as Error).message}`);
+    }
   }
 
   return (

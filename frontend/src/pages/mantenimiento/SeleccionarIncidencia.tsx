@@ -40,7 +40,7 @@ export default function SeleccionarIncidencia() {
         </button>
       }
     >
-      <input className="input" placeholder="🔍 Buscar por ID, máquina, línea…" value={texto} onChange={(e) => setTexto(e.target.value)} />
+      <input className="input" placeholder="⌕ Buscar por ID, máquina, línea…" value={texto} onChange={(e) => setTexto(e.target.value)} />
       <div className="chips">
         <button className={`chip-btn ${filtro === "todas" ? "activa" : ""}`} onClick={() => setFiltro("todas")}>Todas {todas.length}</button>
         <button className={`chip-btn ${filtro === "urgentes" ? "activa" : ""}`} onClick={() => setFiltro("urgentes")}>
@@ -74,11 +74,11 @@ export default function SeleccionarIncidencia() {
             <small className="muted">{i.maquina?.linea}</small>
             <p>{i.descripcion}</p>
             {i.repuestosEstimados?.length ? (
-              <p className="aviso">🔧 Repuesto sugerido: <strong>{i.repuestosEstimados[0].repuestoCodigo}</strong></p>
+              <p className="aviso">⚙ Repuesto sugerido: <strong>{i.repuestosEstimados[0].repuestoCodigo}</strong></p>
             ) : null}
             <div className="fila muted">
-              <small>👤 {i.reportadaPor ?? "—"}</small>
-              <small>🕑 {haceCuanto(i.creadaEn)}</small>
+              <small>◈ {i.reportadaPor ?? "—"}</small>
+              <small>◷ {haceCuanto(i.creadaEn)}</small>
             </div>
           </button>
         ))}
