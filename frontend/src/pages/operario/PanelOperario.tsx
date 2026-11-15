@@ -52,11 +52,30 @@ export default function PanelOperario() {
         <Link to="/incidencias/nueva" className="hero-incidencia">
           <span className="hero-icono">!</span>
           <strong>Reportar Incidencia</strong>
-          <span>Avería, parada de máquina o emergencia</span>
         </Link>
-        <p className="muted center" style={{ fontSize: "0.9rem", marginTop: "0.75rem" }}>
-          Notificá paradas o anomalías al equipo técnico adjuntando fotos y código de máquina.
-        </p>
+
+        <Link
+          to="/incidencias/nueva?scan=1"
+          className="btn"
+          style={{
+            width: "100%",
+            padding: "0.75rem",
+            textAlign: "center",
+            background: "var(--superficie)",
+            border: "1px solid var(--borde)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            fontSize: "0.95rem",
+            marginTop: "0.5rem",
+            borderRadius: "var(--radio)",
+            boxShadow: "var(--sombra)",
+          }}
+        >
+          <span style={{ fontSize: "16px" }}>⌕</span>
+          <strong>Escanear QR de Máquina</strong>
+        </Link>
       </div>
     </Layout>
   );
