@@ -4,9 +4,9 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 
 # 1) Copiamos solo la definición de dependencias (así Docker cachea este paso)
-COPY pyproject.toml ./
+COPY pyproject.toml README.md* ./
 COPY uv.lock* ./
-RUN uv sync --no-dev
+RUN uv sync --no-dev --no-install-project
 
 # 2) Copiamos el código
 COPY app ./app
