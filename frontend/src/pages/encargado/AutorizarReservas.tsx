@@ -41,7 +41,7 @@ export default function AutorizarReservas() {
           <div key={r.id} className={`card borde-${r.urgencia === "urgente" ? "error" : "neutro"}`}>
             <div className="fila">
               <span className={`chip ${r.urgencia === "urgente" ? "chip-error" : ""}`}>#RES-{r.id} · {r.urgencia === "urgente" ? "URGENTE" : "PREVENTIVO"}</span>
-              {r.creadaEn && <small className="muted">🕑 {haceCuanto(r.creadaEn)}</small>}
+              {r.creadaEn && <small className="muted">◷ {haceCuanto(r.creadaEn)}</small>}
             </div>
             <div className="card card-interna">
               <strong>{r.motivo}</strong>
@@ -59,7 +59,7 @@ export default function AutorizarReservas() {
                     <span className="kpi-chico">{l.cantidad} ud</span>
                   </div>
                   {rep && queda !== null && queda <= rep.umbralMinimo && (
-                    <p className="aviso aviso-warn">⚠ Autorizar dejará {queda} ud (umbral mínimo {rep.umbralMinimo}).</p>
+                    <p className="aviso aviso-warn">▲ Autorizar dejará {queda} ud (umbral mínimo {rep.umbralMinimo}).</p>
                   )}
                 </div>
               );
