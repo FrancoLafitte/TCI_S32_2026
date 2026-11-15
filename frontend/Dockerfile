@@ -1,12 +1,12 @@
-# Etapa 1: compilar la app React con Node + pnpm
+# Etapa 1: compilar la app React con Node + pnpm 9
 FROM node:22-alpine AS build
 WORKDIR /app
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@9 --activate
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 # Las URLs se "hornean" en la compilación (Vite reemplaza import.meta.env.*)
-ARG VITE_API_URL=http://localhost:4010
+ARG VITE_API_URL=http://localhost:8000
 ARG VITE_HEALTH_URL=http://localhost:8000/health
 ENV VITE_API_URL=$VITE_API_URL VITE_HEALTH_URL=$VITE_HEALTH_URL
 RUN pnpm build
