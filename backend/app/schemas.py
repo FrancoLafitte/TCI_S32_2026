@@ -64,7 +64,21 @@ class MaquinaCreate(BaseModel):
     tipo: str
     ejemplar: str
     linea: Optional[str] = None
+    estado: Optional[str] = "operativa"
     repuestosAMantener: List[str] = []
+
+
+class MaquinaUpdate(BaseModel):
+    nombre: Optional[str] = None
+    tipo: Optional[str] = None
+    ejemplar: Optional[str] = None
+    linea: Optional[str] = None
+    estado: Optional[str] = None
+    repuestosAMantener: Optional[List[str]] = None
+
+
+class VincularRepuestoSchema(BaseModel):
+    repuestoCodigo: str
 
 
 class MaquinaResumen(BaseModel):

@@ -14,6 +14,7 @@ import BuscarRepuesto from "./pages/repuestos/BuscarRepuesto";
 import TrazabilidadRepuesto from "./pages/repuestos/TrazabilidadRepuesto";
 import IngresarRepuesto from "./pages/repuestos/IngresarRepuesto";
 import PanelEncargado from "./pages/encargado/PanelEncargado";
+import GestionMaquinaria from "./pages/encargado/GestionMaquinaria";
 import AutorizarReservas from "./pages/encargado/AutorizarReservas";
 import ListaCompras from "./pages/encargado/ListaCompras";
 import PanelGerencia from "./pages/gerencia/PanelGerencia";
@@ -129,6 +130,14 @@ export default function App() {
         element={
           <ConRol>
             <PanelEncargado />
+          </ConRol>
+        }
+      />
+      <Route
+        path="/encargado/maquinas"
+        element={
+          <ConRol>
+            <GestionMaquinaria />
           </ConRol>
         }
       />

@@ -1,0 +1,14 @@
+{
+  "name": "TCI_S32_2026",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "pnpm --dir frontend build",
+    "dev": "pnpm --dir frontend dev",
+    "test": "pnpm --dir frontend test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

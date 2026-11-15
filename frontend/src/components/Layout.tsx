@@ -66,7 +66,12 @@ export default function Layout({ titulo, subtitulo, volver, children, pie, ancho
             {rol === "operario" ? (
               <NavLink to="/operario/incidencias">▤<span>Incidencias</span></NavLink>
             ) : rol === "gerencia" ? null : (
-              <NavLink to="/repuestos">▣<span>Repuestos</span></NavLink>
+              <>
+                {rol === "encargado" && (
+                  <NavLink to="/encargado/maquinas">⚙<span>Maquinaria</span></NavLink>
+                )}
+                <NavLink to="/repuestos">▣<span>Repuestos</span></NavLink>
+              </>
             )}
             <button
               onClick={cerrarSesion}

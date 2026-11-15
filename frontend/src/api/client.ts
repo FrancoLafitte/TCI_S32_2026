@@ -33,9 +33,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   const res = await fetch(`${API_URL}${path}`, { method, headers, body: payload });
   if (!res.ok) {
-    let err: Partial<ErrorApi> = {};
+    let err: Partial<ErrorApi> & { detail?: string } = {};
     try { err = await res.json(); } catch { /* respuesta sin JSON */ }
-    throw new ApiError(res.status, err.codigo ?? `HTTP_${res.status}`, err.mensaje ?? res.statusText);
+    throw new ApiError(res.status, err.codigo ?? `HTTP_${res.status}`, err.mensaje ?? err.detail ?? res.statusText);
   }
   return (await res.json()) as T;
 }
