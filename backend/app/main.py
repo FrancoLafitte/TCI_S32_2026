@@ -1,25 +1,47 @@
-"""API de Gestión de Stock y Mantenimiento de Planta.
-
-M3 (walking skeleton): solo existe GET /health. El resto de los endpoints del
-contrato (docs/contrato/openapi.yaml) los sirve el mock de Prism hasta la M4.
-"""
+"""API de Gestión de Stock y Mantenimiento de Planta."""
 
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
+from sqlmodel import Session, select
+
+from app.database import get_session, init_db
+from app.models import Usuario
+from app.seed import seed_data
+from app.routers import (
+    tablero,
+    repuestos,
+    maquinas,
+    incidencias,
+    reparaciones,
+    compras,
+    reservas,
+)
 
 VERSION = "0.2.0"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Inicializa la base de datos y precarga datos iniciales al arrancar."""
+    init_db()
+    seed_data()
+    yield
+
 
 app = FastAPI(
     title="API de Gestión de Stock y Mantenimiento de Planta",
     version=VERSION,
+    lifespan=lifespan,
 )
 
-# El frontend corre en otro puerto (5173 o 8080), así que hay que habilitar CORS.
+# El frontend corre en otro puerto (5173 o 8080), así que habilitamos CORS.
+# CORS habilitado para que el frontend (Vite en localhost:5173 o 8080) pueda consumir la API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,6 +49,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Registrar todos los routers de negocio
+app.include_router(tablero.router)
+app.include_router(repuestos.router)
+app.include_router(maquinas.router)
+app.include_router(incidencias.router)
+app.include_router(reparaciones.router)
+app.include_router(compras.router)
+app.include_router(reservas.router)
 
 
 Rol = Literal["operario", "mantenimiento", "encargado", "gerencia"]
@@ -45,50 +76,31 @@ class LoginResponse(BaseModel):
     email: str
 
 
-# Usuarios del sistema precargados por rol
-USUARIOS_SISTEMA: dict[str, dict] = {
-    "operario@planta.com": {
-        "password": "1234",
-        "rol": "operario",
-        "nombre": "Juan Pérez",
-    },
-    "mantenimiento@planta.com": {
-        "password": "1234",
-        "rol": "mantenimiento",
-        "nombre": "Carlos Gómez",
-    },
-    "encargado@planta.com": {
-        "password": "1234",
-        "rol": "encargado",
-        "nombre": "Dra. Laura Martínez",
-    },
-    "gerencia@planta.com": {
-        "password": "1234",
-        "rol": "gerencia",
-        "nombre": "Ing. Roberto Rossi",
-    },
-}
-
-
 @app.post("/auth/login", response_model=LoginResponse, tags=["Autenticación"])
-def login(creds: LoginRequest) -> LoginResponse:
-    """Valida credenciales y devuelve el token y rol para redirigir al panel correspondiente."""
-    usuario = USUARIOS_SISTEMA.get(creds.email.strip().lower())
-    if not usuario or usuario["password"] != creds.password:
+def login(creds: LoginRequest, session: Session = Depends(get_session)) -> LoginResponse:
+    """Valida credenciales contra la base de datos y devuelve el token y rol."""
+    email_normalizado = creds.email.strip().lower()
+
+    # Buscamos el usuario en la base de datos
+    statement = select(Usuario).where(Usuario.email == email_normalizado)
+    usuario = session.exec(statement).first()
+
+    if not usuario or usuario.password != creds.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Correo o contraseña incorrectos",
         )
 
-    rol: Rol = usuario["rol"]
+    rol = usuario.rol  # operario, mantenimiento, encargado, gerencia
+    rol = usuario.rol
     token = f"token-{rol}-{int(datetime.now(timezone.utc).timestamp())}"
 
     return LoginResponse(
         access_token=token,
         token_type="bearer",
-        rol=rol,
-        nombre=usuario["nombre"],
-        email=creds.email.strip().lower(),
+        rol=rol,  # type: ignore[arg-type]
+        nombre=usuario.nombre,
+        email=usuario.email,
     )
 
 
