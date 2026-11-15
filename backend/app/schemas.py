@@ -101,6 +101,10 @@ class LineaUsoCreate(BaseModel):
     cantidad: int = Field(ge=1)
 
 
+class ReparacionCreate(BaseModel):
+    incidenciaId: int
+
+
 class LineaUsoOut(BaseModel):
     id: int
     reparacionId: int

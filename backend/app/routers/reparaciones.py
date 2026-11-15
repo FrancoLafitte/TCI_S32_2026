@@ -8,11 +8,13 @@ from app.models import (
     LineaUso,
     Repuesto,
     Incidencia,
+    Maquina,
     MovimientoStock,
     Alerta,
     utc_now,
 )
 from app.schemas import (
+    ReparacionCreate,
     ReparacionOut,
     LineaUsoCreate,
     LineaUsoOut,
@@ -58,6 +60,36 @@ def listar_reparaciones(
     """Lista las intervenciones técnicas de mantenimiento."""
     reparaciones = session.exec(select(Reparacion)).all()
     return [serializar_reparacion(r, session) for r in reparaciones]
+
+
+@router.post("", response_model=ReparacionOut, status_code=status.HTTP_201_CREATED)
+def iniciar_reparacion(
+    data: ReparacionCreate,
+    session: Session = Depends(get_session),
+) -> ReparacionOut:
+    """Inicia una reparación técnica sobre una incidencia."""
+    incidencia = session.exec(
+        select(Incidencia).where(Incidencia.id == data.incidenciaId)
+    ).first()
+    if not incidencia:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Incidencia #{data.incidenciaId} no encontrada",
+        )
+
+    # Pasa la incidencia a estado en_reparacion
+    incidencia.estado = "en_reparacion"
+    session.add(incidencia)
+
+    reparacion = Reparacion(
+        incidencia_id=data.incidenciaId,
+        iniciada_en=utc_now(),
+    )
+    session.add(reparacion)
+    session.commit()
+    session.refresh(reparacion)
+
+    return serializar_reparacion(reparacion, session)
 
 
 @router.post("/{id}/lineas-uso", response_model=ResultadoLineaUsoOut)
@@ -162,13 +194,27 @@ def cerrar_reparacion(
     rep.notas = data.notas
     rep.estado_maquina = data.estadoMaquina
 
-    # Resolver la incidencia asociada
+    # Actualizar estado de la incidencia y máquina según el resultado
     incidencia = session.exec(
         select(Incidencia).where(Incidencia.id == rep.incidencia_id)
     ).first()
     if incidencia:
-        incidencia.estado = "resuelta"
+        if data.estadoMaquina == "operativa":
+            incidencia.estado = "resuelta"
+        elif data.estadoMaquina == "en_pruebas":
+            incidencia.estado = "en_cuarentena"
+        elif data.estadoMaquina == "fuera_de_servicio":
+            incidencia.estado = "detenida"
         session.add(incidencia)
+
+    # Actualizar estado de la máquina en la base de datos
+    if incidencia and incidencia.maquina_codigo:
+        maq = session.exec(
+            select(Maquina).where(Maquina.codigo == incidencia.maquina_codigo)
+        ).first()
+        if maq:
+            maq.estado = data.estadoMaquina
+            session.add(maq)
 
     session.add(rep)
     session.commit()
