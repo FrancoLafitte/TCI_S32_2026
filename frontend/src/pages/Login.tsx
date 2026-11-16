@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 import { EstadoServidor } from "../components/Layout";
+import TurnstileCaptcha from "../components/TurnstileCaptcha";
 import { ROLES, useRol, type Rol } from "../rol";
 
 const USUARIOS_DEMO: Array<{ email: string; pass: string; rol: Rol; label: string }> = [
@@ -17,8 +18,12 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,9 +31,7 @@ export default function Login() {
     setCargando(true);
 
     try {
-      console.log("Intentando login con:", { email });
-      const res = await api.login(email, password);
-      console.log("Login exitoso:", res);
+      const res = await api.login(email, password, captchaRequired ? captchaToken ?? undefined : undefined);
       login({
         nombre: res.nombre,
         email: res.email,
@@ -37,11 +40,15 @@ export default function Login() {
       });
       nav(ROLES[res.rol].inicio);
     } catch (err: unknown) {
-      console.error("Error en login:", err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
         setError("Error al conectar con el servidor de autenticación");
+      }
+      if (err instanceof ApiError && err.captchaRequired) {
+        setCaptchaRequired(true);
+        setCaptchaToken(null);
+        setCaptchaResetKey((key) => key + 1);
       }
     } finally {
       setCargando(false);
@@ -102,6 +109,15 @@ export default function Login() {
             />
           </div>
 
+          {captchaRequired && (
+            <div className="form-group">
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold" }}>
+                Verificación de seguridad
+              </label>
+              <TurnstileCaptcha resetKey={captchaResetKey} onToken={handleCaptchaToken} />
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="password" style={{ display: "block", marginBottom: "0.25rem", fontWeight: "bold" }}>
               Contraseña:
@@ -120,7 +136,7 @@ export default function Login() {
 
           <button
             type="submit"
-            disabled={cargando}
+            disabled={cargando || (captchaRequired && !captchaToken)}
             style={{
               padding: "0.75rem",
               background: "#2563eb",
