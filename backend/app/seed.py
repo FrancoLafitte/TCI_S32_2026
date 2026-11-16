@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
 from app.database import engine, init_db
+from app.security import hash_password
 from app.models import (
     Usuario,
     Maquina,
@@ -21,25 +22,25 @@ def seed_data() -> None:
             usuarios = [
                 Usuario(
                     email="operario@planta.com",
-                    password="1234",
+                    password=hash_password("1234"),
                     rol="operario",
                     nombre="Juan Pérez",
                 ),
                 Usuario(
                     email="mantenimiento@planta.com",
-                    password="1234",
+                    password=hash_password("1234"),
                     rol="mantenimiento",
                     nombre="Carlos Gómez",
                 ),
                 Usuario(
                     email="encargado@planta.com",
-                    password="1234",
+                    password=hash_password("1234"),
                     rol="encargado",
                     nombre="Dra. Laura Martínez",
                 ),
                 Usuario(
                     email="gerencia@planta.com",
-                    password="1234",
+                    password=hash_password("1234"),
                     rol="gerencia",
                     nombre="Ing. Roberto Rossi",
                 ),
