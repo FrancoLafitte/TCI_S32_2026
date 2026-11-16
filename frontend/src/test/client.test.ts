@@ -21,4 +21,28 @@ describe("cliente de la API", () => {
       codigo: "STOCK_INSUFICIENTE",
     } satisfies Partial<ApiError>);
   });
+
+  it("envía el token de Turnstile y detecta cuándo auth exige CAPTCHA", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          detail: {
+            detail: "Completa la verificación CAPTCHA para continuar",
+            captcha_required: true,
+          },
+        }),
+        { status: 428 },
+      ),
+    );
+
+    await expect(api.login("operario@planta.com", "1234", "turnstile-token")).rejects.toMatchObject({
+      status: 428,
+      captchaRequired: true,
+    } satisfies Partial<ApiError>);
+    expect(JSON.parse(spy.mock.calls[0][1]!.body as string)).toMatchObject({
+      email: "operario@planta.com",
+      password: "1234",
+      captcha_token: "turnstile-token",
+    });
+  });
 });

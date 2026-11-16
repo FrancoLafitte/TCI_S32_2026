@@ -8,7 +8,8 @@ COPY . .
 # Las URLs se "hornean" en la compilación (Vite reemplaza import.meta.env.*)
 ARG VITE_API_URL=http://localhost:8000
 ARG VITE_HEALTH_URL=http://localhost:8000/health
-ENV VITE_API_URL=$VITE_API_URL VITE_HEALTH_URL=$VITE_HEALTH_URL
+ARG VITE_TURNSTILE_SITE_KEY
+ENV VITE_API_URL=$VITE_API_URL VITE_HEALTH_URL=$VITE_HEALTH_URL VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 RUN pnpm build
 
 # Etapa 2: servir los archivos estáticos con nginx (imagen chica)

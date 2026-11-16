@@ -10,7 +10,12 @@ export const AUTH_URL = import.meta.env.VITE_AUTH_URL ?? (typeof window !== "und
 export const HEALTH_URL = import.meta.env.VITE_HEALTH_URL ?? (typeof window !== "undefined" && window.location.hostname === "127.0.0.1" ? "http://127.0.0.1:8000/health" : "http://localhost:8000/health");
 
 export class ApiError extends Error {
-  constructor(public status: number, public codigo: string, mensaje: string) {
+  constructor(
+    public status: number,
+    public codigo: string,
+    mensaje: string,
+    public captchaRequired = false,
+  ) {
     super(mensaje);
   }
 }
@@ -46,21 +51,37 @@ export const api = {
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
   delete: <T>(path: string) => request<T>("DELETE", path),
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string, captchaToken?: string) => {
     const res = await fetch(`${AUTH_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+        ...(captchaToken === undefined ? {} : { captcha_token: captchaToken }),
+      }),
     });
     if (!res.ok) {
       let detalle = "Error al iniciar sesión";
+      let captchaRequired = false;
       try {
-        const body = await res.json();
-        detalle = body.detail ?? detalle;
+        const body = await res.json() as {
+          detail?: unknown;
+          captcha_required?: boolean;
+        };
+        const detail = body.detail;
+        if (typeof detail === "string") {
+          detalle = detail;
+          captchaRequired = body.captcha_required ?? false;
+        } else if (detail && typeof detail === "object") {
+          const info = detail as { detail?: unknown; captcha_required?: boolean };
+          if (typeof info.detail === "string") detalle = info.detail;
+          captchaRequired = info.captcha_required ?? body.captcha_required ?? false;
+        }
       } catch {
         /* no es json */
       }
-      throw new ApiError(res.status, `HTTP_${res.status}`, detalle);
+      throw new ApiError(res.status, `HTTP_${res.status}`, detalle, captchaRequired);
     }
     return (await res.json()) as {
       access_token: string;
