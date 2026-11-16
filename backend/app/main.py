@@ -20,6 +20,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session, init_db
 from app.models import Usuario
+from app.security import verify_password
 from app.seed import seed_data
 from app.routers import (
     tablero,
@@ -175,7 +176,7 @@ def login(
     statement = select(Usuario).where(Usuario.email == email_normalizado)
     usuario = session.exec(statement).first()
 
-    if not usuario or usuario.password != creds.password:
+    if not usuario or not verify_password(creds.password, usuario.password):
         with _login_attempts_lock:
             attempt.failures += 1
             attempt.expires_at = time.monotonic() + LOGIN_ATTEMPT_TTL_SECONDS

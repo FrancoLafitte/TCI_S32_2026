@@ -1,6 +1,7 @@
 """Funciones para proteger y verificar contraseñas con Argon2."""
 
 from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
 
 
 _password_hash = PasswordHash.recommended()
@@ -13,4 +14,8 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, password_hash: str) -> bool:
     """Comprueba si la contraseña ingresada corresponde al hash guardado."""
-    return _password_hash.verify(password, password_hash)
+    try:
+        return _password_hash.verify(password, password_hash)
+    except UnknownHashError:
+        # Las contraseñas sin migrar no son hashes válidos.
+        return False
