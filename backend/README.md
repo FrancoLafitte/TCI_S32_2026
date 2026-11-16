@@ -1,6 +1,56 @@
 # Backend - API de Gestión de Stock y Mantenimiento de Planta
 FastAPI + SQLModel + PostgreSQL / SQLite.
 
+## Contraseñas hasheadas
+
+Las contraseñas nuevas se almacenan con Argon2id mediante `pwdlib`. El login
+verifica el hash; no acepta contraseñas almacenadas en texto plano. El frontend
+no requiere cambios y los usuarios de prueba siguen ingresando con `1234`.
+
+### Actualizar una instalación existente con Docker
+
+Desde la raíz del repositorio:
+
+```sh
+docker compose up -d --build backend
+```
+
+Al arrancar, el backend convierte automáticamente las contraseñas existentes en
+la base configurada por `DATABASE_URL`, antes de aceptar pedidos. Conserva usuarios,
+identificadores y los demás datos. No hace falta ejecutar comandos de migración
+ni borrar el volumen de PostgreSQL. Las contraseñas de acceso siguen siendo las mismas.
+Una base nueva recibe hashes directamente desde el seed.
+
+La comprobación se realiza en cada arranque, pero solo se convierten las contraseñas
+que todavía están en texto plano. Los hashes Argon2 existentes no se modifican.
+La migración se confirma en una única transacción; si falla, el backend no comienza
+a aceptar pedidos. No se muestran contraseñas ni hashes.
+
+### Desarrollo local y comprobación
+
+Desde `backend/`, con `DATABASE_URL` apuntando a la base que quieras actualizar
+(por defecto, `planta.db` de SQLite en el directorio actual):
+
+```sh
+uv sync
+uv run uvicorn app.main:app --reload
+```
+
+El arranque local también migra automáticamente. Para ejecutar las pruebas:
+
+```sh
+uv run pytest tests/test_security.py tests/test_auth.py tests/test_migrate_passwords.py -q
+```
+
+En `http://localhost:8000/docs`, prueba `POST /auth/login` con un usuario de prueba:
+`1234` debe devolver 200 y una contraseña incorrecta debe devolver 401.
+El endpoint nunca devuelve la contraseña ni su hash. Las pruebas usan SQLite
+en memoria y no modifican la base de la aplicación.
+
+En un despliegue público debe usarse HTTPS para proteger la contraseña en tránsito;
+el hashing protege su almacenamiento. El hashing no modifica el mecanismo actual
+de tokens ni de permisos por rol.
+
 ## Login y CAPTCHA de prueba
 
 Después de cinco intentos fallidos desde una misma IP, `/auth/login` requiere un token

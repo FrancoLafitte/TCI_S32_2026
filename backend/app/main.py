@@ -18,7 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app import database
 from app.database import get_session, init_db
+from app.migrate_passwords import migrate_passwords
 from app.models import Usuario
 from app.security import verify_password
 from app.seed import seed_data
@@ -40,6 +42,9 @@ async def lifespan(app: FastAPI):
     """Inicializa la base de datos y precarga datos iniciales al arrancar."""
     init_db()
     seed_data()
+    # La migración omite los hashes existentes y termina antes de aceptar pedidos.
+    with Session(database.engine) as session:
+        migrate_passwords(session)
     yield
 
 
